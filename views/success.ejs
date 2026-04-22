@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 성공</title>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; text-align: center; padding: 50px; }
+        h1 { color: #28a745; }
+        .message { font-size: 18px; margin-bottom: 30px; }
+        .download-btn {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 18px;
+            display: inline-block;
+        }
+        .download-btn:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>결제가 완료되었습니다!</h1>
+    <p class="message">
+        신청하신 <strong><%= orderName %></strong> 교육 과정이 접수되었습니다.<br>
+        아래 버튼을 눌러 교육 안내 자료를 다운로드하세요.
+    </p>
+
+    <a href="/public/guide.pdf" download class="download-btn">교육 안내 PDF 다운로드</a>
+    
+    <p style="margin-top: 30px; color: #666; font-size: 14px;">주문 번호: <%= orderId %></p>
+    <p><a href="/">메인으로 돌아가기</a></p>
+</body>
+</html>

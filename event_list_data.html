@@ -1,0 +1,789 @@
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+<!-- table_count_area -->
+
+		
+		
+			
+		
+		
+		
+			
+		
+		
+		<p class="totalcnt">총 <span>762</span>건 <em>1</em>/<em>39</em> 페이지</p>
+		<fieldset class="boardschbox">
+			<legend>게시글 검색</legend>
+			<span class="optionbox"><select title="검색범위 선택" name="searchKey" id="searchKey"><option value="A"  >전체</option><option value="T"  >제목</option><option value="C"  >내용</option></select></span>
+			<p><span class="inpbox"><input type="text" class="txt" title="검색어 입력" id="searchTxt" name="searchTxt" value="" /></span><button type="button" class="btn-search" title="조회" onclick="search();">검색</button><button type="button" class="btn-search b_right" title="초기화" onclick="formReset();" style="display:none">초기화</button></p>
+			<span class="optionbox ml_5">
+			<select title="보기 선택" id="pageSize" onchange="changePageSize();" >
+				<option value="10"  >10개씩</option>
+				<option value="15" >15개씩</option>
+				<option value="20" selected>20개씩</option>
+				<option value="30" >30개씩</option>
+				<option value="50" >50개씩</option>
+			</select>
+			</span>
+		</fieldset>
+		<!-- <span class="search_btn_area">
+			<button class="btn sch" title="조회" onclick="changePageSize();"><span>보기</span></button>
+		</span> -->
+		<!--// table_count_area -->
+
+		<!--// list_table_area -->
+		<div class="boardlist">
+		<table cellspacing="0" cellpadding="0" summary="공지사항 게시글을 번호, 제목, 작성일, 첨부, 조회 순으로 정보를 확인하실 수 있습니다.">
+			<caption>게시판 리스트 화면</caption>
+			<colgroup>
+				<col style="width:10%" />
+				<col style="width:100%" />
+				<col style="width:28%" />
+				<col style="width:18%" />
+			</colgroup>
+			<thead>
+			 <tr>
+			 	<th scope="col">번호</th>
+				<th scope="col">제목</th>
+				<th scope="col">행사/교육 일자</th>
+				<th scope="col">접수여부</th>
+			</tr>
+			</thead>
+			<tbody>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338042')" >인천상공회의소-재정경제부 공동 ‘2025년 개정세법’ 무료 설명회</a></td>
+					<td>2026.02.24</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338042' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140337966')" >2026년도 2월 사무관리분야 교육훈련과정 안내-2026년도 2월 교육비는 반드시 2월에 납부</a></td>
+					<td>2026.02.09</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+							
+							
+								
+								
+								<div class="btn4 end">종료<input type='hidden' id='eventState20140337966' value='O'/></div>
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140337998')" >[온라인 교육] 김경하 세무사의 2025년도 귀속 연말정산 실무 교육</a></td>
+					<td>2026.02.09~<br />2026.03.09</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+							
+							
+								
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140337998' value='S'/></div>
+								
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338002')" >[오프라인 교육] 한종문 대표의 경쟁사를 압도하는 제안서 작성 및 PT 전략</a></td>
+					<td>2026.02.24</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338002' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338003')" >[오프라인 교육] 임성종 회계사의 계정과목별 회계와 세무 실무</a></td>
+					<td>2026.02.25</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338003' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338004')" >[오프라인] 1등 피피티사냥꾼! 전승엽 강사의 파워포인트 필승 전략</a></td>
+					<td>2026.02.26</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338004' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338078')" >[오프라인 교육] 박재현 대표의 일 잘하는 직장인의 보고서 작성법</a></td>
+					<td>2026.03.10</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338078' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338079')" >[오프라인 교육] 유근종 노무사의 급여담당자를 위한 급여&4대보험 핵심 마스터</a></td>
+					<td>2026.03.12</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338079' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338080')" >[오프라인 교육] 이중연 교수의 총무계약서 작성 및 분석 핵심 마스터</a></td>
+					<td>2026.03.17</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338080' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338081')" >[오프라인 교육] 남궁은 대표의 인스타그램 마케팅 실무</a></td>
+					<td>2026.03.18</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338081' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338082')" >[오프라인 교육] 백진호 대표의 영화 속 협상 고수에게 배우는 협상 심리와 스킬</a></td>
+					<td>2026.03.19</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338082' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338083')" >[오프라인 교육] AI와 함께하는 멘토링 임팩트 : 1DAY로 완성하는 멘토링 기술과 실전 롤플레잉</a></td>
+					<td>2026.03.24</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338083' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338084')" >[오프라인 교육] 조현석 대표의 기업의 영업이익을 향상시키는 제품별 손익분기점 분석 실무</a></td>
+					<td>2026.03.26</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338084' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140332465')" >온라인 FTA 교육 무료 사이트 안내</a></td>
+					<td>2026.01.01~<br />2026.12.31</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+							
+							
+								
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140332465' value='S'/></div>
+								
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338031')" >2026년 인천FTA통상진흥센터 연간 교육 및 설명회 일정 안내</a></td>
+					<td>2026.01.01~<br />2026.12.31</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+							
+							
+								
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338031' value='S'/></div>
+								
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338056')" >「FTA 활용의 첫 단추! 품목분류와 FTA 실무교육」 참가 안내</a></td>
+					<td>2026.02.25</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338056' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338001')" >[폐강-오프라인 교육] 김경태 강사의 고객 경험 혁신과 고객 감동을 실현하는 응대 전략</a></td>
+					<td>2026.02.13</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338001' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338077')" >2026년도 3월 사무관리분야 교육훈련과정 안내-2026년도 3월 교육비는 반드시 3월에 납부</a></td>
+					<td>2026.03.10~<br />2026.03.26</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338077' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338089')" >[오프라인 교육] 박희용 대표의 코딩 없이 만드는 나만의 AI 프로그램(Google AI Studio 실무</a></td>
+					<td>2026.03.05</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338089' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+					
+					
+						
+							
+								<img src="/images/front/icon/table_txt_icon01.png" alt="공지">
+							
+							
+						
+					</th>
+					<td class="title"><a href="javascript: eventView('20140338090')" >[오프라인 교육] 정옥선 대표의 챗GPT를 활용한 비즈니스 모델 설계부터 사업계획서 작성 실무 교육</a></td>
+					<td>2026.03.11</td>
+					<td>
+
+					
+					
+					
+					
+					
+
+
+						
+							
+							
+								<div class="btn4 ing">접수중<input type='hidden' id='eventState20140338090' value='S'/></div>
+							
+							
+							
+							
+						
+					</td>
+				</tr>
+				
+				
+			</tbody>
+		</table>
+		</div>
+		<!--// list_table_area -->
+
+
+		<!-- paging_area -->
+		<div class='paging paging_area' >
+ <a href="#none"  class="btn-paging-pre" title="이전"> 이전 </a> 
+<span class="mobileoff_in"><a href='javascript:go_Page(1)' class="on">1</a>
+<a href='javascript:go_Page(2)'>2</a>
+<a href='javascript:go_Page(3)'>3</a>
+<a href='javascript:go_Page(4)'>4</a>
+<a href='javascript:go_Page(5)'>5</a>
+<a href='javascript:go_Page(6)'>6</a>
+<a href='javascript:go_Page(7)'>7</a>
+<a href='javascript:go_Page(8)'>8</a>
+<a href='javascript:go_Page(9)'>9</a>
+<a href='javascript:go_Page(10)'>10</a>
+</span><span class="mobileon_in"><a href='javascript:go_Page(1)' class="on">1</a>
+<a href='javascript:go_Page(2)'>2</a>
+<a href='javascript:go_Page(3)'>3</a>
+<a href='javascript:go_Page(4)'>4</a>
+<a href='javascript:go_Page(5)'>5</a>
+<a href='javascript:go_Page(6)'>6</a>
+<a href='javascript:go_Page(7)'>7</a>
+<a href='javascript:go_Page(8)'>8</a>
+<a href='javascript:go_Page(9)'>9</a>
+<a href='javascript:go_Page(10)'>10</a>
+</span><a href="javascript:go_Page(11)"  class="btn-paging-next" title="다음"> 다음 </a>
+</div>
+
+		<!--// paging_area -->

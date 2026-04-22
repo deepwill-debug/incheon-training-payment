@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인천상공회의소 교육 신청서</title>
+    <!-- Toss Payments SDK -->
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & Babel CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-label {
+            background-color: #f1f5f9;
+            padding: 12px 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .table-content {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const validateBusinessNo = (number) => {
+            const regex = /^\d{3}-\d{2}-\d{5}$/;
+            if (!regex.test(number)) return false;
+
+            const raw = number.replace(/-/g, '');
+            const checkWeights = [1, 3, 7, 1, 3, 7, 1, 3, 5];
+            let sum = 0;
+
+            for (let i = 0; i < 9; i++) {
+                sum += parseInt(raw[i]) * checkWeights[i];
+            }
+
+            sum += Math.floor((parseInt(raw[8]) * 5) / 10);
+            const checkDigit = (10 - (sum % 10)) % 10;
+            return checkDigit === parseInt(raw[9]);
+        };
+
+        const InputField = ({ label, name, value, onChange, required, placeholder, type = "text", error, success, action }) => (
+            <div className="table-row">
+                <div className={`table-label ${required ? 'required' : ''}`}>{label}</div>
+                <div className="table-content flex-col !items-start py-3 w-full">
+                    <div className="flex w-full gap-2">
+                        <input
+                            type={type}
+                            className={`flex-1 border rounded px-3 py-1.5 focus:outline-none focus:ring-2 transition-all ${error ? 'border-red-500 focus:ring-red-200' :
+                                success ? 'border-green-500 focus:ring-green-200' :
+                                    'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                                }`}
+                            placeholder={placeholder}
+                            value={value}
+                            onChange={(e) => onChange(name, e.target.value)}
+                        />
+                        {action}
+                    </div>
+                    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+                    {success && <p className="text-green-600 text-xs mt-1">{success}</p>}
+                </div>
+            </div>
+        );
+
+        const clientKey = '{{ clientKey }}';
+        const orderId = '{{ orderId }}';
+        let tossPayments;
+        try {
+            if (typeof TossPayments !== 'undefined') {
+                tossPayments = TossPayments(clientKey);
+            } else {
+                console.error('TossPayments SDK not loaded');
+            }
+        } catch (e) {
+            console.error('Failed to initialize TossPayments:', e);
+        }
+
+        const App = () => {
+
+            const initialCourses = {{ initialCourses | tojson
+        }};
+        const [courses, setCourses] = useState(initialCourses);
+        const [selectedCourseId, setSelectedCourseId] = useState(courses[0]?.id);
+        const [companyInfo, setCompanyInfo] = useState({
+            companyName: '',
+            businessNo: '',
+            ceoName: '',
+            tel: '',
+            address: '',
+            isMember: true
+        });
+
+        const [participants, setParticipants] = useState([
+            { id: Date.now(), name: '', dept: '', pos: '', mobile: '', email: '' }
+        ]);
+
+        const [agreed, setAgreed] = useState(false);
+        const [businessNoError, setBusinessNoError] = useState('');
+        const [businessNoSuccess, setBusinessNoSuccess] = useState('');
+
+        useEffect(() => {
+            fetch('/api/courses')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.courses.length > 0) {
+                        setCourses(data.courses);
+                        // Avoid resetting selection if already valid
+                        if (!data.courses.find(c => c.id === selectedCourseId)) {
+                            setSelectedCourseId(data.courses[0].id);
+                        }
+                    }
+                })
+                .catch(err => console.error("Failed to fetch courses:", err));
+        }, []);
+
+        const selectedCourse = courses.find(c => c.id === selectedCourseId) || courses[0] || { memberFee: 0, nonMemberFee: 0, name: '' };
+        const unitPrice = companyInfo.isMember ? selectedCourse.memberFee : selectedCourse.nonMemberFee;
+        const totalPrice = (unitPrice || 0) * participants.length;
+
+        const handleCompanyChange = (name, value) => {
+            setCompanyInfo(prev => ({ ...prev, [name]: value }));
+
+            if (name === 'businessNo') {
+                if (value.length >= 10) {
+                    if (validateBusinessNo(value)) {
+                        setBusinessNoSuccess('유효한 사업자번호입니다.');
+                        setBusinessNoError('');
+                    } else {
+                        setBusinessNoError('올바르지 않은 사업자번호 형식입니다.');
+                        setBusinessNoSuccess('');
+                    }
+                } else {
+                    setBusinessNoError('');
+                    setBusinessNoSuccess('');
+                }
+            }
+        };
+
+        const handleParticipantChange = (id, name, value) => {
+            setParticipants(prev => prev.map(p => p.id === id ? { ...p, [name]: value } : p));
+        };
+
+        const addParticipant = () => {
+            setParticipants(prev => [...prev, { id: Date.now(), name: '', dept: '', pos: '', mobile: '', email: '' }]);
+        };
+
+        const removeParticipant = (id) => {
+            if (participants.length > 1) {
+                setParticipants(prev => prev.filter(p => p.id !== id));
+            }
+        };
+
+        const verifyMember = async () => {
+            if (!companyInfo.businessNo || companyInfo.businessNo.length < 10) {
+                alert('올바른 사업자번호를 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/verify-member', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ businessNo: companyInfo.businessNo })
+                });
+
+                const result = await response.json();
+
+                if (response.status === 503 || result.code === 'VPN_ERROR') {
+                    alert(result.message); // VPN Error
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(result.message || '오류가 발생했습니다.');
+                }
+
+                if (result.success) {
+                    if (result.isMember) {
+                        alert('회원사 정보가 확인되었습니다.');
+                        handleCompanyChange('isMember', true);
+                    } else {
+                        alert('회원 정보가 없습니다. 비회원사로 진행됩니다.');
+                        handleCompanyChange('isMember', false);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Verification failed:", error);
+                alert("회원 확인 중 오류가 발생했습니다: " + error.message);
+            }
+        };
+
+        const [applicationId, setApplicationId] = useState(null);
+        const [appStatus, setAppStatus] = useState('idle'); // idle, submitting, pending, confirmed
+
+        // Polling Effect
+        useEffect(() => {
+            let interval;
+            if (appStatus === 'pending' && applicationId) {
+                interval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`/api/check-status/${applicationId}`);
+                        const result = await response.json();
+
+                        if (result.success) {
+                            let newMemberStatus = null;
+                            if (result.status === '회원') newMemberStatus = true;
+                            if (result.status === '비회원') newMemberStatus = false;
+
+                            if (newMemberStatus !== null) {
+                                clearInterval(interval);
+                                setAppStatus('confirmed');
+                                handleCompanyChange('isMember', newMemberStatus);
+
+                                // Trigger Payment Immediately
+                                // We need to recalculate price based on new status
+                                const newUnitPrice = newMemberStatus ? selectedCourse.memberFee : selectedCourse.nonMemberFee;
+                                const newTotalPrice = newUnitPrice * participants.length;
+
+                                alert(`회원 여부가 확인되었습니다: ${result.status}\n결제를 진행합니다.`);
+                                triggerPayment(newTotalPrice, applicationId, newMemberStatus);
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Polling error", e);
+                    }
+                }, 5000); // Poll every 5 seconds
+            }
+            return () => clearInterval(interval);
+        }, [appStatus, applicationId, participants]);
+
+        const triggerPayment = (amount, appId, isMember) => {
+            // 1. Save session info for success callback (still needed for now)
+            fetch('/api/save-application', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId,
+                    courseName: selectedCourse.name,
+                    companyInfo: { ...companyInfo, isMember }, // Ensure updated member status
+                    participants,
+                    totalPrice: amount
+                })
+            }).then(() => {
+                const orderName = `[${selectedCourse.name}] (${participants.length}명)`;
+                tossPayments.requestPayment('카드', {
+                    amount: amount,
+                    orderId: orderId, // We use the original UUID as OrderID
+                    orderName: orderName,
+                    customerName: participants[0]?.name || '신청자',
+                    successUrl: window.location.origin + '/success',
+                    failUrl: window.location.origin + '/fail',
+                }).catch(error => {
+                    if (error.code !== 'USER_CANCEL') alert(error.message);
+                });
+            });
+        };
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            if (!agreed) return;
+
+            if (companyInfo.businessNo && !validateBusinessNo(companyInfo.businessNo)) {
+                alert('사업자번호를 확인해주세요.');
+                return;
+            }
+
+            setAppStatus('submitting');
+
+            try {
+                // 1. Submit Application to Google Sheet (Step 1)
+                const response = await fetch('/api/submit-application', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        companyName: companyInfo.companyName,
+                        businessNo: companyInfo.businessNo,
+                        applicantName: participants[0]?.name,
+                        courseName: selectedCourse.name,
+                        orderId: orderId
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    setApplicationId(result.applicationId);
+                    setAppStatus('pending'); // Start Polling
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (err) {
+                alert('신청 접수 중 오류가 발생했습니다: ' + err.message);
+                setAppStatus('idle');
+            }
+        };
+
+        return (
+            <div className="max-w-4xl mx-auto py-10 px-4">
+                <div className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
+                    {/* Header */}
+                    <div className="bg-slate-800 text-white p-6">
+                        <h1 className="text-2xl font-bold mb-2">교육 참가 신청서</h1>
+                        <p className="text-slate-300">{selectedCourse.name}</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="p-6 space-y-8">
+                        {/* Course Selection */}
+                        <section>
+                            <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 mb-4 flex items-center">
+                                <span className="mr-2 text-blue-600">00</span> 교육 과정 선택
+                            </h2>
+                            <div className="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-6">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">상공회의소 교육 일정을 확인하여 신청할 과정을 선택해 주세요.</label>
+                                <select
+                                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold"
+                                    value={selectedCourseId}
+                                    onChange={(e) => setSelectedCourseId(Number(e.target.value))}
+                                >
+                                    {courses.map(course => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.name} {course.memberFee === 0 && course.nonMemberFee === 0 ? '(무료)' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* Tuition fee message removed as per user request */}
+                            </div>
+                        </section>
+
+                        {/* Membership & Pricing Preview */}
+                        <section className="bg-blue-50 border border-blue-100 rounded-lg p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h3 className="text-blue-900 font-bold mb-2">회원사 여부 선택</h3>
+                                <div className="flex gap-4">
+                                    <label className="flex items-center cursor-pointer">
+                                        <input type="radio" name="membership" checked={companyInfo.isMember}
+                                            onChange={() => handleCompanyChange('isMember', true)} className="mr-2 w-4 h-4" />
+                                        <span className="text-slate-700">회원사 ({selectedCourse.memberFee.toLocaleString()}원)</span>
+                                    </label>
+                                    <label className="flex items-center cursor-pointer">
+                                        <input type="radio" name="membership" checked={!companyInfo.isMember}
+                                            onChange={() => handleCompanyChange('isMember', false)} className="mr-2 w-4 h-4" />
+                                        <span className="text-slate-700">비회원사 ({selectedCourse.nonMemberFee.toLocaleString()}원)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-slate-600 text-sm">총 교육 인원: {participants.length}명</p>
+                                <p className="text-blue-700 text-2xl font-black">총 {totalPrice.toLocaleString()}원</p>
+                            </div>
+                        </section>
+
+                        {/* Company Information */}
+                        <section>
+                            <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 mb-4 flex items-center">
+                                <span className="mr-2 text-blue-600">01</span> 업체 정보
+                            </h2>
+                            <div className="border-t-2 border-blue-600 border-b border-gray-200">
+                                <InputField
+                                    label="업체명" name="companyName" required
+                                    value={companyInfo.companyName} onChange={handleCompanyChange}
+                                    placeholder="상호명을 입력하세요"
+                                />
+                                <InputField
+                                    label="사업자번호" name="businessNo" required
+                                    value={companyInfo.businessNo} onChange={handleCompanyChange}
+                                    placeholder="000-00-00000"
+                                    error={businessNoError}
+                                    success={businessNoSuccess}
+                                />
+                                <InputField
+                                    label="대표자명" name="ceoName"
+                                    value={companyInfo.ceoName} onChange={handleCompanyChange}
+                                />
+                                <InputField
+                                    label="전화번호" name="tel"
+                                    value={companyInfo.tel} onChange={handleCompanyChange}
+                                    placeholder="032-000-0000"
+                                />
+                            </div>
+                        </section>
+
+                        {/* Participant Information */}
+                        <section>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 flex items-center">
+                                    <span className="mr-2 text-blue-600">02</span> 참가자 명단
+                                </h2>
+                                <button
+                                    type="button"
+                                    onClick={addParticipant}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors flex items-center shadow-sm"
+                                >
+                                    <span className="mr-1">+</span> 참가자 추가
+                                </button>
+                            </div>
+
+                            {participants.map((p, index) => (
+                                <div key={p.id} className="mb-6 last:mb-0 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                    <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center text-sm font-bold text-gray-700">
+                                        <span>참가자 {index + 1}</span>
+                                        {participants.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeParticipant(p.id)}
+                                                className="text-red-500 hover:text-red-700 font-medium"
+                                            >
+                                                삭제
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="border-b border-gray-200">
+                                        <div className="table-row">
+                                            <div className="table-label required">성명</div>
+                                            <div className="table-content">
+                                                <input
+                                                    className="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    value={p.name} onChange={(e) => handleParticipantChange(p.id, 'name', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="table-row">
+                                            <div className="table-label">부서 / 직위</div>
+                                            <div className="table-content gap-2 flex">
+                                                <input
+                                                    placeholder="부서"
+                                                    className="w-1/2 border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    value={p.dept} onChange={(e) => handleParticipantChange(p.id, 'dept', e.target.value)}
+                                                />
+                                                <input
+                                                    placeholder="직위 (필수)"
+                                                    className="w-1/2 border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 border-blue-200"
+                                                    value={p.pos} onChange={(e) => handleParticipantChange(p.id, 'pos', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="table-row">
+                                            <div className="table-label required">연락처</div>
+                                            <div className="table-content">
+                                                <input
+                                                    placeholder="010-0000-0000"
+                                                    className="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    value={p.mobile} onChange={(e) => handleParticipantChange(p.id, 'mobile', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </section>
+
+                        {/* Personal Info Agreement */}
+                        <section>
+                            <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 mb-4 flex items-center">
+                                <span className="mr-2 text-blue-600">03</span> 개인정보 수집 및 이용안내
+                            </h2>
+                            <div className="bg-gray-50 border border-gray-200 p-4 text-sm text-gray-600 h-32 overflow-y-auto mb-3 leading-relaxed">
+                                인천상공회의소는 교육 신청 및 안내를 위해 아래와 같이 개인정보를 수집합니다.<br />
+                                1. 수집항목: 성명, 업체명, 직위, 연락처, 이메일 등<br />
+                                2. 수집목적: 교육 운영 및 이력 관리, 안내사항 공지<br />
+                                3. 보유기간: 교육 종료 후 5년 (관련 법령에 의거)<br />
+                                * 동의를 거부할 권리가 있으나, 거부 시 교육 신청이 제한될 수 있습니다.
+                            </div>
+                            <div className="flex items-center justify-end">
+                                <label className="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        checked={agreed}
+                                        onChange={(e) => setAgreed(e.target.checked)}
+                                    />
+                                    <span className="ml-2 text-gray-700 font-medium font-bold">위 안내사항에 동의합니다. (필수)</span>
+                                </label>
+                            </div>
+                        </section>
+
+                        {/* Submit Button */}
+                        <div className="pt-6 border-t border-gray-100 flex flex-col items-center">
+                            {!agreed && <p className="text-red-500 text-sm mb-3">개인정보 수집 및 이용에 동의하셔야 신청이 가능합니다.</p>}
+                            <button
+                                type="submit"
+                                disabled={!agreed}
+                                className={`px-10 py-3 rounded-md text-lg font-bold shadow-lg transform transition flex items-center ${agreed ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                            >
+                                저장 후 다음 (결제)
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+
+                    {/* Footer Info */}
+                    <div className="bg-gray-50 p-6 border-t border-gray-200 text-xs text-gray-500">
+                        <p className="font-bold mb-1">인천상공회의소 (Education Service Center)</p>
+                        <p>인천광역시 남동구 은봉로 60번길 46 | Tel: 032-810-2800 | Fax: 032-810-2806</p>
+                    </div>
+                </div>
+
+                {/* Waiting Modal */}
+                {appStatus === 'pending' && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-8 rounded-lg shadow-2xl max-w-md w-full text-center">
+                            <div className="mb-4 flex justify-center">
+                                <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-bold mb-2">담당자가 회원 여부를 확인 중입니다.</h3>
+                            <p className="text-gray-600 mb-6">잠시만 기다려 주세요...</p>
+                            <div className="text-sm text-gray-400">신청번호: {applicationId}</div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인천상공회의소 교육 신청 (2026년 2월)</title>
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #0056b3;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+
+        .price-display {
+            font-size: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 13px;
+            color: #777;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>인천상공회의소 교육 신청</h1>
+    <p>2026년 2월 교육 프로그램을 선택하고 결제해 주세요.</p>
+
+    <div class="form-group">
+        <label for="course">교육 과정 선택</label>
+        <select id="course" onchange="updatePrice()">
+            <option value="course1" data-price="110000">[2/9~3/9] 2025년 귀속 연말정산 실무 (온라인) - 110,000원</option>
+            <option value="course2" data-price="165000">[2/11 09:30~17:00] 자재재고관리 기본 과정 (오프라인) - 165,000원</option>
+            <option value="course3" data-price="165000">[2/12 09:30~17:00] 자재재고관리 심화 과정 (오프라인) - 165,000원</option>
+            <option value="course4" data-price="132000">[2/13 09:30~17:30] 고객 경험 혁신과 응대 전략 (오프라인) - 132,000원</option>
+            <option value="course5" data-price="132000">[2/24 10:00~17:00] 경쟁사를 압도하는 제안서 작성 및 PT 전략 (오프라인) - 132,000원
+            </option>
+            <option value="course6" data-price="132000">[2/25 09:30~17:30] 계정과목별 회계와 세무 실무 (오프라인) - 132,000원</option>
+            <option value="course7" data-price="132000">[2/26 10:00~17:00] 파워포인트 필승 전략 (오프라인) - 132,000원</option>
+        </select>
+        <div class="info-text">* 교육비는 회원사 기준 또는 일반 기준에 따라 다를 수 있습니다.</div>
+        <div id="price-display" class="price-display">결제 금액: 110,000원</div>
+    </div>
+
+    <button onclick="pay()">결제하기</button>
+
+    <footer class="footer">
+        <p><strong>인천상공회의소</strong></p>
+        <p>주소: [21631] 인천광역시 남동구 은봉로60번길 46 (논현동, 인천상공회의소)</p>
+        <p>전화: 032-810-2800 / 사업자등록번호: 139-82-00696 / 대표자: 박주봉</p>
+        <p>© Incheon Chamber of Commerce & Industry. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        const clientKey = '{{ clientKey }}';
+        const tossPayments = TossPayments(clientKey);
+
+        function updatePrice() {
+            const select = document.getElementById('course');
+            const price = select.options[select.selectedIndex].getAttribute('data-price');
+            document.getElementById('price-display').innerText = '결제 금액: ' + Number(price).toLocaleString() + '원';
+        }
+
+        function pay() {
+            const select = document.getElementById('course');
+            const selectedOption = select.options[select.selectedIndex];
+            const amount = Number(selectedOption.getAttribute('data-price'));
+            // Remove price from name for orderName
+            const fullText = selectedOption.text;
+            const orderName = fullText.split('-')[0].trim();
+
+            // Unique Order ID per attempt
+            const orderId = '{{ orderId }}' + '_' + Date.now();
+
+            tossPayments.requestPayment('카드', {
+                amount: amount,
+                orderId: orderId,
+                orderName: orderName,
+                customerName: '교육생', // In a real app, collect this from an input
+                successUrl: window.location.origin + '/success',
+                failUrl: window.location.origin + '/fail',
+            }).catch(function (error) {
+                if (error.code === 'USER_CANCEL') {
+                    // User canceled
+                } else {
+                    alert(error.message);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

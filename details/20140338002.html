@@ -1,0 +1,1436 @@
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+	<head>
+<!-- 	<script>
+	response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(fileName, "utf-8") + ";");
+	</script> -->
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+		<meta name="viewport" content="width=device-width, user-scalable=yes, target-densitydpi=medium-dpi" />
+
+		<title>인천상공회의소</title>
+
+        <!-- 파비콘 설정 ------------------------------------------------------->
+        <link rel="shortcut icon" href="/images/favicon.ico">
+        <!-- 파비콘 설정 ------------------------------------------------------->
+
+		<link type="text/css" rel="stylesheet" href="/css/front/reset.css" />
+		<link type="text/css" rel="stylesheet" href="/css/front/contents.css" />
+		<link rel="stylesheet" type="text/css" href="/css/front/bootstrap.css" />
+		<link type="text/css" rel="stylesheet" href="/css/front/reveal.css">
+
+		<script src="/js/jquery-1.11.3.min.js"></script>
+		<script src="/assets/bootstrap/js/bootstrap.min.js"></script>
+	    <script src="/assets/parsley/dist/parsley.js"></script>
+	    <script src="/assets/parsley/dist/i18n/ko.js"></script>
+		<script src="/js/jquery_ui.js"></script>
+		<script src="/js/slick.js"></script>
+
+
+ 	    <script src="/assets/parsley/dist/parsley.js"></script>
+		<script src="/assets/jquery/jquery.form.js"></script>
+		<script src="/assets/jquery/jquery.popupoverlay.js"></script>
+	    <script src="/assets/jqgrid/i18n/grid.locale-kr.js"></script>
+		<script src="/assets/jqgrid/jquery.jqGrid.js"></script>
+		<script src="/assets/jqgrid/jquery.jqGrid.ext.js"></script>
+		<script src="/assets/jqgrid/jquery.loadJSON.js"></script>
+		<script src="/assets/jqgrid/jquery.tablednd.js"></script>
+		<script src="/js/common.js"></script>
+		<script src="/js/common_ui.js"></script>
+
+		<script type="text/javascript">
+			//document.title = "" ;
+			var mi = "";
+			var getSubPG = true;
+			var getSubCK = true;
+	        	// ready
+			$(document).ready(function(){
+				userAgentChk();
+				// 메뉴를 생성해준다.
+				$.ajax
+				({
+					type: "POST",
+			           url: "/front/user/homepageMenuList.do",
+			           dataType: 'json',
+
+					success:function(data){
+						//alert(JSON.stringify(data.topMenuList));
+						createTopMenu(data.topMenuList);
+						createMobileMenu(data.topMenuList);
+					}
+				});
+
+				if(''!=''){
+					getSubPG = false;
+					$.ajax
+					({
+						type: "POST",
+				           url: "/front/common/naviSubmenuList.do",
+				           dataType: 'json',
+				           data: {
+				           	topMenuId : "",
+				           	upMenuId : "",
+				           	siteId : "90"
+				   		},
+						  success:function(data){
+							createNaviSubmenu(data.naviSubmenuList);
+							getSubCK = false;
+					      }
+					});
+				}else{
+					//alert('정상 접근이 아닙니다. 문제가 지속될 경우 관리자에게 문의 바랍니다.');
+					//location.href='/';
+					return;
+				}
+
+				if(getSubPG){
+					setTimeout('getSubmenu()',1000);
+				}
+				if(getSubCK){
+					setTimeout('getSubmenu()',3000);
+				}
+
+				$(".liMn").each(function(idx, obj){
+					$(".Depth1_area").eq(idx).hide();
+
+					// 토글버튼
+					$(this).children("[name=aTag]").click(function(){
+						//
+						if($(this).parent().attr("class").indexOf("on")){
+							$(this).parent().attr("class","on liMn");
+						}else{
+							$(this).parent().attr("class","liMn");
+						}
+						//
+						$(this).next("ul").slideToggle();
+					});
+				});
+
+
+				$('.gnb nav > ul > li > div').each(function(i, e){
+					$(e).mouseenter(function(){
+						$(this).prev().addClass('on');
+						$(this).parent().siblings().children('a').removeClass('on');
+					});
+					$(e).prev().mouseleave(function(){
+						$(this).removeClass('on');
+					});
+				});
+
+				$('.gnb').mouseleave(function(){
+					$('.gnb nav div').hide();
+					$('.gnb nav a').removeClass('on');
+						$('html').css('overflow-x','auto');
+				});
+
+			});
+
+	        // mobile nav
+	        var view_put = [0,0]; // : 팝업이 위치할곳
+			var layer_popup = function(type) {
+				var layerObj = document.getElementById("mnav");
+
+				switch(type) {
+					case "open":
+					layerObj.style.top = view_put[0];
+					layerObj.style.left = view_put[1];
+					break;
+					default:
+					layerObj.style.top = "-10000px";
+					layerObj.style.left = "-10000px";
+					break;
+				};
+			};
+
+			// full bg
+			$(document).ready(function(){
+				$('#mnav').css('min-height', $(document).height() - 0 );
+				//$('.nav').css('min-height', $(document).height() - 0 );
+			});
+
+			function getSubmenu(){
+				getSubPG = false;
+				$.ajax
+				({
+					type: "POST",
+			           url: "/front/common/naviSubmenuList.do",
+			           dataType: 'json',
+			           data: {
+			           	topMenuId : "",
+			           	upMenuId : "",
+			           	siteId : "90"
+			   		},
+					  success:function(data){
+						createNaviSubmenu(data.naviSubmenuList);
+						getSubCK = false;
+				      }
+				});
+			}
+
+
+			function createNaviSubmenu(list){
+				var mstr = "";
+				$(".leftmenu").html("");
+
+				var menu;
+				var cmenu;
+				var premenu;
+				var url ='';
+				for(var i =0; i < list.length;i++){
+					menu = list[i];
+					cmenu = list[i+1];
+					if (i>0){premenu=list[i-1];}
+					var j=0;
+					if(menu.navi.indexOf(''+'/')>-1){
+						j++;
+						if(menu.lvl==2){
+
+							if(menu.lvl<premenu.lvl) mstr += '</ul>';
+							if(j>1) mstr += '</li>';
+							mstr += '<li';
+							(menu.navi.indexOf(mi)>-1 || menu.menuId=='')?mstr +=' class="active">':mstr +='>';
+
+							if(menu.subCnt>0){
+
+								mstr += '    <a href="javascript:goPage(\''+cmenu.menuId+'\',\'\',\'\');" title="'+menu.menuNm+'">'+menu.menuNm+'</a>';
+
+
+
+							}else{
+
+								mstr += '	<a href="javascript:goPage(\''+menu.menuId+'\',\'\',\'\');" title="'+menu.menuNm+'">'+menu.menuNm+'</a>';
+
+							}
+						}
+						if(menu.lvl==3){
+
+							if(menu.lvl>premenu.lvl) mstr += '<ul class="left_smenu">';
+							mstr += '<li';
+							(menu.navi.indexOf(mi)>-1)?mstr +=' class="active">':mstr +='>';
+							mstr += '	<a href="javascript:goPage(\''+menu.menuId+'\',\'\',\'\');" title="'+menu.menuNm+'">'+menu.menuNm+'</a></li>';
+						}
+					}
+				}
+				mstr += '</li>';
+				$(".leftmenu").html(mstr);
+				$(".leftmenu > li.on").prev().css("background","#f2f2f2").css("border-left","1px solid #aaa").css("border-right","1px solid #aaa");
+				$(".topnav").accordion({
+					accordion:false,
+					speed: 500,
+					closedSign: '',
+					openedSign: ''
+				});
+			}
+
+			function showSubmenu(){
+				if($("#NaviSubMenu").css("display") == "none")
+					$("#NaviSubMenu").show();
+				else
+					$("#NaviSubMenu").hide();
+			}
+
+			function showSubMenu(idx){
+				$("#submenu_"+idx).show();
+			}
+
+			function hideSubMenu(idx){
+				$("#submenu_"+idx).hide();
+			}
+
+			function menuBlur(){
+				// 현재 포커스 알아오기
+				//var activeEle = document.activeElement.getAttribute("class");
+				//if(activeEle != "smenu"){
+					$(".sub_menu").css("display","none");
+					$(".nav_bg").css("display","none");
+				//}
+			}
+
+
+	    </script>
+
+	</head>
+
+<body id="main"> <!-- 메인페이지에 body에 id값 있습니다 -->
+
+<dl class="skipnavi">
+	<dt>메뉴 건너띄기</dt>
+	<dd>
+		<a href="javascript:skipNavi('#topmenu')">상단메뉴 바로가기</a>
+		<a href="javascript:skipNavi('#leftarea')">왼쪽메뉴 바로가기</a>
+		<a href="#contentsarea">메인 본문 바로가기</a>
+	</dd>
+</dl>
+
+<div id="wrap">
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<!-- S: toparea -->
+	<div class="toparea">
+		<div class="top_line">
+			<ul class="top_left">
+<!-- 				<li class="moreview topleft_1">
+					<a href="#">바로가기</a>
+				</li>
+ --><!-- 				<li class="topleft_2"><a href="http://www.korcham.net" target="_blank">코참넷</a></li> -->
+				<li class="topleft_3">
+					<a href="#" title="바로가기 보기" onclick="toglePop('stack1'); return false;">
+						
+							
+							
+							
+							
+								패밀리사이트
+							
+						
+					</a>
+					<!-- 팝업 -->
+                        <div id="stack1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <a href="#" class="close" onclick="hidePop('stack1'); return false;"></a>
+										<h3 id="myModalLabel">
+											
+												
+												
+												
+												
+													패밀리 사이트 더보기
+												
+											
+										</h3>
+                                    </div>
+                                    <ul class="family_box">
+                                    	<li>
+											<ul class="family_sub">
+											
+		                                    		
+												
+													
+														</ul>
+													</li>
+													<li>
+														<ul class="family_sub">
+													
+													<li><a href="http://www.korcham.net" target="_blank" title="새창 열기">대한상공회의소</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="https://www2.ripc.org" target="_blank" title="새창 열기">인천지식재산센터</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://www.incheonhrd.or.kr" target="_blank" title="새창 열기">인천지역인적자원개발위원회</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://www.fta.go.kr/regions/incheon" target="_blank" title="새창 열기">인천FTA활용지원센터</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://license.korcham.net" target="_blank" title="새창 열기">자격평가사업단</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://cert.korcham.net" target="_blank" title="새창 열기">무역인증서비스센터</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://pl.korcham.net" target="_blank" title="새창 열기">PL센터</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://sign.korcham.net" target="_blank" title="새창 열기">공인인증센터</a></li>
+													
+												
+											
+												
+											
+												
+													
+														</ul>
+													</li>
+													<li>
+														<ul class="family_sub">
+													
+													<li><a href="http://www.korcham-china.net" target="_blank" title="새창 열기">중국한국상회</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://china.korcham.net" target="_blank" title="새창 열기">코참차이나</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://vietnam.korcham.net" target="_blank" title="새창 열기">베트남사무소</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://bisd.or.kr" target="_blank" title="새창 열기">지속가능경영원</a></li>
+													
+												
+											
+												
+											
+												
+													
+													<li><a href="http://www.gs1kr.org" target="_blank" title="새창 열기">유통물류진흥원</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://www.koreannet.or.kr" target="_blank" title="새창 열기">코리안넷</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://bizmap.korcham.net" target="_blank" title="새창 열기">전국규제지도</a></li>
+													
+												
+											
+												
+											
+												
+													
+													<li><a href="http://www.iim3.org" target="_blank" title="새창 열기">산업혁신운동</a></li>
+													
+												
+											
+												
+											
+												
+													
+														</ul>
+													</li>
+													<li>
+														<ul class="family_sub">
+													
+													<li><a href="http://mafra-win.korcham.net" target="_blank" title="새창 열기">농식품 상생협력 추진본부</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="http://www.korchamhrd.net" target="_blank" title="새창 열기">인력개발원 HRD포털</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://www.oneshot.or.kr" target="_blank" title="새창 열기">기업활력법 종합포털</a></li>
+													
+												
+											
+												
+											
+												
+													
+													<li><a href="http://intern.korchamhrd.net" target="_blank" title="새창 열기">중소기업청년취업인턴제</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://www.hanjung.go.kr" target="_self" title="현재창 열기">한중문화관</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+													
+													<li><a href="https://www.koreaexim.go.kr" target="_self" title="현재창 열기">한국수출입은행</a></li>
+													
+												
+											
+												
+													
+													<li><a href="http://www.kita.net" target="_self" title="현재창 열기">한국무역협회</a></li>
+													
+												
+											
+												
+											
+												
+											
+												
+											
+												
+											
+												
+											
+												
+											
+												
+											
+											</ul>
+										</li>
+									</ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 팝업 -->
+				</li>
+				
+			</ul>
+			<ul class="top_right">
+				<li class="home"><a href="/"><img src="/images/home.png" alt="home" /></a></li>
+				<!--
+				
+				<li class="login"><a href="/front/user/login.do">로그인</a></li>
+				<li class="join"><a href="/common/front/join.do">회원가입</a></li>
+				
+				
+				-->
+
+				
+					
+					
+					
+					
+						<li class="login"><a href="/front/user/login.do">로그인</a></li>
+						<li class="join"><a href="/common/front/join.do">회원가입</a></li>
+					
+				
+
+				<li class="sitemap"><a href="/common/front/siteMap.do">
+					
+						
+						
+						
+						
+							<li class="sitemap"><a href="/common/front/siteMap.do">사이트맵</a></li>
+						
+					
+				</a></li>
+			</ul>
+		</div>
+		<div class="gnb">
+			<h1><a href="/"><img src="/images/logo/logo_top/incheon_top_logo.png" alt="인천상공회의소" border="0"/></a></h1>
+			<div class="topmenu" id="topmenu" onclick="javascript:location.href='/';">
+			<div class="topmenu_bg"></div>
+			<ul class="mobileoff">
+
+			</ul>
+		</div>
+		</div>
+		<div class="mobile-category">
+			<button type="button" class="btn-category-holder" onclick="mobileMenuToggle('open')">모바일 메뉴 열림</button>
+			<div class="mobile_menu">
+				<button type="button" class="btn btn-blue2" onclick="mobileMenuToggle('close')">닫기</button>
+				<ul class="acc" id="acc">
+				</ul>
+			</div>
+		</div>
+	</div>
+	<!-- //E: toparea -->
+	
+
+
+
+
+	<!-- S: midarea -->
+	<div id="sub_midarea">
+		<!-- S: maincontents -->
+		<div class="nav">
+			<div class="nav_box">
+				<a href="/"><img src="/images/nav_home.png" alt="home" /></a>
+				
+				
+				<a  href="#"></a>
+				
+
+
+
+			</div>
+		</div>
+		<div class="sub_contents">
+			<!-- S: leftarea -->
+			<div class="leftarea page-sidebar navbar-collapse collapse" id="leftarea">
+				<!--<h2 tabindex="0"><span></span></h2>-->
+				<h2 tabindex="0"><span></span></h2>
+				<ul class="leftmenu topnav">
+				</ul>
+			</div>
+			<!--//E: leftarea -->
+			<!--//S: contentsarea -->
+			<div class="contentsarea" id="contentsarea">
+	
+
+
+
+
+
+
+<script language="javascript">
+var eventListPageUrl = "/front/event/eventList.do?menuId=210";
+var eventWriteUrl = "/front/event/eventWrite.do?menuId=210";
+var eventViewUrl = "/front/event/eventView.do?menuId=210";
+var passPopupUrl = "/front/event/eventPassPopup.do?menuId=210";
+var eventApplyViewUrl = "/front/event/eventApplyView.do?menuId=210";
+var cmt_el;
+var cmt_commentid;
+var mode;
+
+$(document).ready(function(){
+	$('#companyNo').on("keyup", function(event ) {
+		keyUpBizNo($('#companyNo'));
+	});
+	endYn();
+/*
+	var Now = new Date();
+	var NowTime = Now.getFullYear() +""+ (Now.getMonth() + 1) +""+ Now.getDate()
+	var endDy
+	endDy = $('#endDy').val().replace(".", "").replace(".", "")
+	alert(endDy);
+	alert(NowTime);
+	alert(endDy - NowTime)
+	alert($('#cancelYn').val()); */
+
+});
+
+ function endYn(){
+	var Now = new Date();
+	var NowTime = Now.getFullYear() +""+ (Now.getMonth() + 1) +""+ Now.getDate()
+	var endDy
+	endDy = $('#endDy').val().replace(".", "").replace(".", "");
+	if ($('#cancelYn').val() == "Y"){
+		$('#state').val('E');
+	}
+	if (($('#limit').val() - $('#applyCnt').val()) <= 0){
+		$('#state').val('E');
+	}
+	if (NowTime - endDy >= 0){
+		$('#state').val('O');
+	}
+
+
+}
+
+//목록으로
+function list(){
+	var f = document.writeFrm;
+	f.eventId.value = '';
+    f.target = "_self";
+    f.action = eventListPageUrl;
+    f.submit();
+}
+
+
+ //답글 쓰기
+function eventApply(){
+	var f = document.writeFrm;
+	if(f.state.value!='S' && f.state.value!=''){
+		if ($('#state').val() == 'O' || $('#state').val() == 'o' ){
+			alert('행사가 종료되었습니다.');
+		}else{
+			alert('접수 마감 되었습니다.');
+		}
+		return;
+	}
+	$("#mode").val("W");
+
+    f.target = "_self";
+    f.action = eventWriteUrl;
+    f.submit();
+}
+
+//답글 쓰기
+function applyList(){
+	var f = document.writeFrm;
+
+	$("#mode").val("R");
+
+    f.target = "_self";
+    f.action = eventWriteUrl;
+    f.submit();
+}
+
+
+
+//게시물 뷰
+function eventView(eventid){
+	var f = document.writeFrm;
+
+	$("#eventId").val(eventid);
+
+    f.target = "_self";
+    f.action = eventViewUrl;
+    f.submit();
+}
+
+function applyView(applySeq){
+	var f = document.writeFrm;
+
+	$("#applySeq").val(applySeq);
+
+    f.target = "_self";
+    f.action = eventApplyViewUrl;
+    f.submit();
+}
+
+
+
+function searchApply(){
+	var no = $('#companyNo').val().replace(/-/gi,'');
+	var nm = $('#managerNm').val();
+	if(no.length<10){
+		alert('사업자번호를 정확히 입력 해주시기 바랍니다.');
+		return;
+	}
+
+	 if($('#email').val()==""){
+		alert('신청자담당자 이메일을 정확히 입력 해주시기 바랍니다.');
+		return;
+	}
+
+	$.ajax
+	({
+		type: "POST",
+           url: "/front/event/searchApply.do",
+           dataType: 'json',
+           data: {
+           	companyNo : $('#companyNo').val().replace(/-/gi,''),
+           	eventId : "20140338002",
+           	managerNm : $('#managerNm').val(),
+			email : $('#email').val()
+   		},
+		success:function(data){
+			//alert(JSON.stringify(data.topMenuList));
+			if (data.success=='true'){
+				applyView(data.applySeq);
+			}else{
+				alert('신청 정보가 없습니다.\n다시 확인하시기 바랍니다.');
+			}
+		}
+	});
+
+}
+
+//사업자 번호 체크(keyup)
+function keyUpBizNo(obj) {
+	var regExp = /^[0-9]*$/;
+	if(!regExp.test(obj.val())) {
+		obj.val(obj.val().replace(/[^0-9]/gi,""));
+	}
+
+	var bizNo = obj.val();
+	bizNo = bizNo.replace(/\-/g, "");
+	if(bizNo.length > 5) {
+		bizNo = bizNo.substr(0, 3) + "-" + bizNo.substr(3, 2) + "-" + bizNo.substr(5);
+	} else if(bizNo.length > 3) {
+		bizNo = bizNo.substr(0, 3) + "-" + bizNo.substr(3);
+	}
+
+	bizNo = bizNo.substr(0, 12);
+	obj.val(bizNo);
+}
+
+</script>
+
+
+<form id="writeFrm" name="writeFrm" method="post" onsubmit="return false;">
+	<input type='hidden' id="mode" name='mode' value="E" />
+	<input type='hidden' id="eventId" name='eventId' value="20140338002" />
+	<input type='hidden' id="state" name='state' value="" />
+	<input type='hidden' id="applySeq" name='applySeq' value="" />
+	<input type='hidden' id="miv_pageNo" name='miv_pageNo' value="" />
+	<input type='hidden' id="s_reply_ststus" name='s_reply_ststus' value="" />
+	<input type='hidden' id="s_searchkey" name='s_searchkey' value="" />
+	<input type='hidden' id="s_searchtxt" name='s_searchtxt' value="" />
+	<input type='hidden' id="s_cate_id" name='s_cate_id' value="" />
+	<input type='hidden' id="managerEmail" name='managerEmail' value="ksz@incham.net" />
+	<input type='hidden' id="cancelYn" name='cancelYn' value="" /><!-- 마감여부 -->
+	<input type='hidden' id="endDy" name='endDy' value="2026.02.24" /><!-- 종료일 -->
+	<input type='hidden' id="limit" name='limit' value="50" /><!-- 종료일 -->
+	<input type='hidden' id="applyCnt" name='applyCnt' value="2" /><!-- 종료일 -->
+
+</form>
+
+
+	<div class="contents_title">
+		<h2></h2>
+	</div>
+	<div class="contents_detail">
+		<!--//S: 공지사항보기 -->
+		<div class="boardveiw">
+			<table cellspacing="0" cellpadding="0" summary="공지사항 상세보기를 제목, 작성자, 작성일, 첨부 순으로 보실 수 있습니다. ">
+				<caption>행사/교육 상세보기</caption>
+				<colgroup>
+					<col style="width:20%" />
+					<col style="width:30%" />
+					<col style="width:20%" />
+					<col style="width:30%" />
+				</colgroup>
+				<tbody>
+					<tr>
+						<th scope="row">제목</th>
+						<td colspan="3">	[오프라인 교육] 한종문 대표의 경쟁사를 압도하는 제안서 작성 및 PT 전략</td>
+					</tr>
+					<tr>
+						<th scope="row">행사/교육 일자</th>
+						<td>2026.02.24</td>
+						<th scope="row">참가신청방법</th>
+						<td>온라인신청</td>
+					</tr>
+					<tr>
+						<th scope="row">담당부서</th>
+						<td>경제진흥실</td>
+						<th scope="row">담당자</th>
+						<td>김수지</td>
+					</tr>
+					<tr>
+						<th scope="row">첨부파일</th>
+						<td colspan="3">
+							<ul class="file_view">
+								
+								
+									<li><a href="/file/dext5uploaddata/2026/참가신청서 260224-(오프라인) 제안서경쟁PT.hwp">참가신청서 260224-(오프라인) 제안서경쟁PT.hwp</a></li>
+								
+								<!-- <li><a href="#none">첨부파일제목이노출됩니다.pdf </a></li> -->
+							</ul>
+						</td>
+					</tr>
+					<tr>
+						<td scope="row" colspan="4" class="td_p">
+							
+							
+								
+							
+								
+							
+								
+							
+								
+								   
+								    
+									
+								
+							
+							<p><img src="/../../../../../../file/dext5editordata/2026/20260122_173515181_97485.png" style="width: 800px; height: 1342px; margin: 0px;"></p>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<p class="btnjustify">
+			
+			
+			
+				
+				
+					<button  onclick="eventApply()" type="button" class="btn btn-blue">신청</button>
+				
+			<button  onclick="popOpen($('.p1'))" type="button" class="btn btn btn-sky">신청확인</button>
+			
+			<button  onclick="list()" type="button" class="btn btn-gray">목록</button>
+		</p>
+		<div class="befor_next">
+			<table cellspacing="0" cellpadding="0" summary="이전글, 다음글 확인하실수 있습니다 ">
+				<caption>이전글, 다음글</caption>
+				<colgroup>
+					<col style="width:15%">
+					<col style="width:85%">
+				</colgroup>
+				<tbody>
+
+		
+          <tr>
+            <th scope="row" style="font-size:10px;">▲</th>
+            <td><a href="#none" style="font-size:12px;" onclick="eventView('20140338003')" >[오프라인 교육] 임성종 회계사의 계정과목별 회계와 세무 실무</a></td>
+          </tr>
+          
+
+          			<tr>
+					<th scope="row"  style="font-size:10px;"> ‒</th>
+					<td>[오프라인 교육] 한종문 대표의 경쟁사를 압도하는 제안서 작성 및 PT 전략</td>
+					</tr>
+
+   		
+          <tr>
+            <th scope="row" style="font-size:10px;">▼</th>
+            <td><a href="#none" style="font-size:12px;" onclick="eventView('20140338042')">인천상공회의소-재정경제부 공동 ‘2025년 개정세법’ 무료 설명회</a></td>
+          </tr>
+          
+
+				</tbody>
+			</table>
+		</div>
+		<!--//E: 공지사항보기 -->
+	</div>
+	<div id="popup_wrap">
+		<div class="popup p1">
+	    	<div class="popup_inner">
+	    	<form>
+	        	<div class="tit">
+	            	신청확인
+	                <button type="button" class="but_close" title="팝업 닫기" onClick="javascript:popClose()"><img src="/images/family_close.png"></button>
+	            </div>
+	            <div class="con">
+	            	<div class="datalist">
+						<div class="input_box">
+							<input type="text" name="companyNo" id="companyNo" placeholder="사업자번호" />
+							<!--<input type="text" name="managerNm" id="managerNm"  placeholder="신청자명" maxlength="60"/>-->
+							<input type="text" name="email" id="email"  placeholder="신청자담당자 이메일" maxlength="120" />
+						</div>
+						<button onclick="searchApply();" type="button" class="btn btn-sky">조회</button>
+					</div>
+	                <!-- 버튼 -->
+	                <div class="btn_wrap">
+	                    <button type="button" class="btn-default" onClick="javascript:popClose()">닫기</button>
+	                </div>
+	                <!-- 버튼 끝 -->
+	            </div>
+	        </form>
+	        </div>
+	    </div>
+	</div>
+	<script>
+	function applyPop(){
+		$('.popup').toggle();
+	}
+	</script>
+	
+
+
+			</div>
+			<!--//E: contentsarea -->
+
+		</div>
+		<!--//E: maincontents -->
+	</div>
+	<!-- //E: midarea -->
+
+	<!-- S: bottomarea -->
+	
+	
+	
+
+
+
+
+<script>
+
+</script>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="/css/needpopup.min.css">
+
+	  <!-- Styles just for demo -->
+		<style>
+			.wrapper {
+				padding: 40px 60px;
+			}
+
+			a[data-needpopup-show] {
+				display: inline-block;
+				margin: 0 10px 10px 0;
+				padding: 10px 15px;
+				font-weight: bold;
+				letter-spacing: 1px;
+				text-decoration: none;
+	/* 			color: #fff;
+				background: #7B5207; */
+/* 			  border-radius: 3px;
+			  box-shadow: 0 1px 1px 1px rgba(0, 0, 0, 0.2); */
+			}
+
+/* 			p {
+				font-size: 1.2em;
+				line-height: 1.4;
+				color: #343638;
+				margin: 20px 0;
+			} */
+
+			.needpopup {
+			  border-radius: 6px;
+			  box-shadow: 0 1px 5px 1px rgba(0, 0, 0, 1);
+			}
+
+			.needpopup p {
+				margin: 0;
+			}
+			.needpopup p + p {
+				margin-top: 10px;
+			}
+		</style>
+
+				<div class="bottomarea">
+					
+					<div class="bottom_top">
+
+					</div>
+					
+					<div class="innerbox">
+						<h1><img src="/images/logo/logo_bottom/incheon_footer_logo.png" alt="인천상공회의소" border="0"/></h1>
+						<div class="address_box">
+							<ul class="footer_menu">
+
+								
+									
+										<li><a href="http://incheon.korcham.net/front/contents/sub.do?contId=2328&menuId=10226" style="color:#0033CC;">개인정보처리방침</a></li>
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+									
+								
+
+
+								<li><a href="javascript:window.open('http://www.korcham.net/nCham/Service/Private/lhtml/incheon_video_popup.html','영상정보처리기기 운영 관리방침','width=910, height=700, menubar=no, toolbar=no, location=no, status=no, scrollbars=yes, resizable=no'); void(0)">영상정보처리기기 운영 관리방침</a></li>
+								
+									
+									
+									
+									
+										<li><a href="/front/contents/locationpageList.do?menuId=10157">찾아오시는길</a></li>
+									
+								
+
+						<!-- 		<li class="none" ><a href="#" data-needpopup-show="#custom-popup">이메일무단추출금지</a></li> -->
+
+							</ul>
+							<p class="address">우 21632 인천광역시 남동구 은봉로60번길 46(논현동, 인천상공회의소)</p>
+
+								
+									
+									
+									
+									
+										<p class="copyright">대표전화 : 032-810-2800~3, 팩스번호 032-810-2807   문의 : inchon@korcham.net</p>
+										<p class="address"> Copyright (c) 2017 incheon, All Right Reserved.</p>
+									
+								
+
+						</div>
+
+						
+							
+							
+							
+							
+								<div class="select_box" id="linkBanner">
+									<select title="관련사이트">
+										<option value="">관련사이트</option>
+										
+										
+										
+										
+										<option value="https://www2.ripc.org" data-target="_blank">인천지식재산센터</option>
+										
+										
+										
+										<option value="http://www.incheonhrd.or.kr" data-target="_blank">인천지역인적자원개발위원회</option>
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										<option value="http://fta.go.kr/regions/incheon" data-target="_blank">인천FTA활용지원센터</option>
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										<option value="http://license.korcham.net" data-target="_blank">자격평가사업단</option>
+										
+										
+										
+										
+										
+										
+										
+										<option value="http://cert.korcham.net" data-target="_blank">무역인증서비스센터</option>
+										
+										
+										
+										<option value="http://sign.korcham.net" data-target="_blank">공인인증센터</option>
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										<option value="http://www.hanjung.go.kr" data-target="_self">한중문화관</option>
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+									</select>
+									<button id="btnBanner">이동</button>
+								</div>
+							
+						
+
+					</div>
+				</div>
+
+
+
+<!-- <div id='custom-popup' class="needpopup" data-needpopup-options="custom">
+	<p>
+	<div class="basic_txt">
+		<p style="text-align: center;">
+			<span style="font-family: 맑은 고딕;"><b>&nbsp;<span
+					style="color: rgb(0, 118, 200); font-size: 18pt;">이메일무단수집거부</span></b></span>
+		</p>
+		<p style="text-align: center;">
+			<span style="font-family: 맑은 고딕;"><b><span
+					style="color: rgb(0, 118, 200); font-size: 18pt;"><br></span></b></span>
+		</p>
+		<hr
+			style="border: 0px; border-image: none; height: 2px; color: rgb(133, 133, 133); background-color: rgb(133, 133, 133);">
+		<p>
+			<span style="font-size: 10pt;">본 웹사이트에 게시된 이메일 주소가 전자우편 수집
+				프로그램이나 그 밖의 기술적 장치를 이용하여 무단으로 수집되는 것을 거부하며, 이를 위반시 `정보통신망 이용촉진 및
+				정보보호 등에 관한 법률` 에 의해 처벌됨을 유념하시기 바랍니다. </span>
+		</p>
+		<p>
+			<br>
+		</p>
+		<h2>
+			<span
+				style="color: rgb(0, 118, 200); font-family: 맑은 고딕; font-size: 14pt;">정보통신망법
+				제50조의 2</span>
+		</h2>
+		<h2>
+			<span
+				style="color: rgb(0, 118, 200); font-family: 맑은 고딕; font-size: 14pt;">(전자우편주소의
+				무단 수집행위 등 금지)</span>
+		</h2>
+		<div>
+			<span
+				style="color: rgb(0, 118, 200); font-family: 맑은 고딕; font-size: 14pt;"><br></span>
+		</div>
+		<p style="line-height: 1.5;">
+			<span style="font-family: 맑은 고딕; font-size: 10pt;">① 누구든지 인터넷
+				홈페이지 운영자 또는 관리자의 사전 동의 없이 인터넷 홈페이지에서 자동으로 전자우편주소를 수집하는 프로그램이나 그 밖의
+				기술적 장치를 이용하여 전자우편주소를 수집하여서는 아니 된다.<br>② 누구든지 제1항을 위반하여 수집된
+				전자우편주소를 판매ㆍ유통하여서는 아니 된다.<br>③ 누구든지 제1항과 제2항에 따라 수집ㆍ판매 및 유통이 금지된
+				전자우편주소임을 알면서 이를 정보 전송에 이용하여서는 아니 된다.
+			</span>
+		</p>
+	</div>
+</div>
+
+ -->
+	<!-- //E: bottomarea -->
+
+</div>
+
+<script>
+$(".slidebanner > ul").slick({
+	slidesToShow: 5,
+	slidesToScroll: 1,
+	speed: 400,
+	autoplay: true,
+	autoplaySpeed:5000,
+	arrows: true,
+	dots:false,
+	responsive: [{
+      breakpoint: 768,
+      settings: {
+        slidesToShow: 6
+      }
+    },
+    {
+      breakpoint: 480,
+      settings: {
+        slidesToShow: 3
+      }
+    }]
+});
+
+$(".slick-pause").click(function(){
+	if ($(".slidebanner").hasClass("pause") == false){
+		$(".slidebanner > ul").slick('slickPause');
+		$(".slidebanner").addClass("pause");
+	}else{
+		$(".slidebanner > ul").slick('slickPlay');
+		$(".slidebanner").removeClass("pause");
+	}
+});
+
+
+</script>
+<script src="/js/script.js"></script>
+
+
+<script src="/js/scriptbreaker-multiple-accordion-1.js"></script>
+<script language="JavaScript">
+
+		$(document).ready(function() {
+			$(".topnav").accordion({
+				accordion:false,
+				speed: 500,
+				closedSign: '',
+				openedSign: ''
+			});
+		});
+
+</script>
+<script type="text/javascript">
+var parentAccordion=new TINY.accordion.slider("parentAccordion");
+</script>
+<script type="text/javascript">
+//관련사이트
+		$("#btnBanner").click(function(){
+
+			var url = $("#linkBanner option:selected").val();
+			var target = $("#linkBanner option:selected").data("target");
+
+			if(url ==""){
+				return;
+			}
+
+			goExternalUrl(target,url);
+
+		});
+</script>
+
+	<!-- 	<script src="/js/needpopup.min.js"></script>
+		<script>
+			needPopup.config.custom = {
+				'removerPlace': 'outside',
+				'closeOnOutside': false,
+				onShow: function() {
+					console.log('needPopup is shown');
+				},
+				onHide: function() {
+					console.log('needPopup is hidden');
+				}
+			};
+			needPopup.init();
+		</script> -->
+</body>
+</html>

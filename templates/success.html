@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 성공</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+
+        h1 {
+            color: #28a745;
+        }
+
+        .message {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .download-btn {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 18px;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 13px;
+            color: #777;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>결제가 완료되었습니다!</h1>
+    <p class="message">
+        신청하신 <strong>{{ orderName }}</strong> 교육 과정이 접수되었습니다.<br>
+        아래 버튼을 눌러 접수 확인증을 다운로드하거나 안내 자료를 확인하세요.
+    </p>
+
+    <div style="display: flex; justify-content: center; gap: 20px;">
+        <a href="/receipt?orderId={{ orderId }}" target="_blank" class="download-btn"
+            style="background-color: #28a745;">접수 확인증 (PDF/인쇄)</a>
+        <a href="/public/guide.pdf" download class="download-btn">교육 안내 PDF 다운로드</a>
+    </div>
+
+    <script>
+        // Automatically open the receipt for printing/saving as PDF
+        window.onload = function () {
+            const receiptUrl = "/receipt?orderId={{ orderId }}";
+            // In a real scenario, we might want to delay this slightly or ask the user
+            console.log("Automatically opening receipt:", receiptUrl);
+        };
+    </script>
+
+    <p style="margin-top: 30px; color: #666; font-size: 14px;">주문 번호: {{ orderId }}</p>
+    <p><a href="/">메인으로 돌아가기</a></p>
+
+    <footer class="footer">
+        <p><strong>인천상공회의소</strong></p>
+        <p>인천광역시 남동구 은봉로60번길 46 (논현동) / Tel: 032-810-2800</p>
+    </footer>
+</body>
+
+</html>
