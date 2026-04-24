@@ -5,6 +5,34 @@ import json
 from datetime import datetime
 from utils_google import get_service
 from dotenv import load_dotenv
+import re
+from io import BytesIO
+try:
+    from PIL import Image
+    import pytesseract
+except ImportError:
+    pass # Handled later if missing
+
+def extract_fees_from_image(img_url):
+    try:
+        if 'pytesseract' not in globals():
+            return None, None
+        resp = requests.get(img_url, timeout=10)
+        img = Image.open(BytesIO(resp.content))
+        text = pytesseract.image_to_string(img, lang='kor+eng')
+        
+        text_no_space = text.replace(' ', '')
+        member_match = re.search(r'(?<!비)회원.*?(\d{1,3}(?:,\d{3})*|\d{4,})원', text_no_space)
+        non_member_match = re.search(r'비회원.*?(\d{1,3}(?:,\d{3})*|\d{4,})원', text_no_space)
+        
+        member_fee = member_match.group(1).replace(',', '') if member_match else None
+        non_member_fee = non_member_match.group(1).replace(',', '') if non_member_match else None
+        
+        return member_fee, non_member_fee
+    except Exception as e:
+        print(f"OCR failed for {img_url}: {e}")
+        return None, None
+
 
 load_dotenv()
 
@@ -55,7 +83,7 @@ def scrape_incheon_korcham():
             continue
 
         # Exclude specific keywords
-        exclude_keywords = ['교육훈련과정 안내', 'FTA']
+        exclude_keywords = ['교육훈련과정 안내', 'FTA', '설명회']
         if any(keyword in title for keyword in exclude_keywords):
             continue
             
@@ -69,14 +97,40 @@ def scrape_incheon_korcham():
                 continue
         except Exception as e:
             print(f"Date parsing error for '{title}': {e}")
-            # If date parse fails but it's '접수중', we might want to keep it? 
-            # Usually keep it just in case.
             pass
             
+        # Fetch fees
+        member_fee_val = '확인 필요'
+        non_member_fee_val = '확인 필요'
+        if '무료' in title:
+            member_fee_val = 0
+            non_member_fee_val = 0
+        else:
+            try:
+                detail_resp = requests.get(link, headers=headers, timeout=10)
+                detail_soup = BeautifulSoup(detail_resp.text, 'html.parser')
+                content_div = detail_soup.select_one('.view_cont') or detail_soup.select_one('.board_view') or detail_soup
+                imgs = content_div.select('img')
+                img_url = None
+                for img in imgs:
+                    src = img.get('src')
+                    if src and not src.endswith('.gif'):
+                        img_url = src if src.startswith('http') else "https://incheon.korcham.net" + src
+                        break
+                
+                if img_url:
+                    mf, nmf = extract_fees_from_image(img_url)
+                    if mf: member_fee_val = mf
+                    if nmf: non_member_fee_val = nmf
+            except Exception as e:
+                print(f"Detail fetch failed: {e}")
+        
         courses.append({
             'title': title,
             'date': date_str,
-            'link': link
+            'link': link,
+            'member_fee': member_fee_val,
+            'non_member_fee': non_member_fee_val
         })
         
     print(f"Found {len(courses)} active courses.")
@@ -108,12 +162,12 @@ def sync_to_google_sheet(courses):
             
         # 2. Clear existing data
         service.spreadsheets().values().clear(
-            spreadsheetId=sheet_id, range=f"'{tab_name}'!A:C"
+            spreadsheetId=sheet_id, range=f"'{tab_name}'!A:E"
         ).execute()
         
         # 3. Write new data
-        header = ["제목", "교육일정", "상세링크"]
-        rows = [[c['title'], c['date'], c['link']] for c in courses]
+        header = ["제목", "교육일정", "상세링크", "회원사 교육비", "비회원사 교육비"]
+        rows = [[c['title'], c['date'], c['link'], c['member_fee'], c['non_member_fee']] for c in courses]
         
         body = {'values': [header] + rows}
         service.spreadsheets().values().update(

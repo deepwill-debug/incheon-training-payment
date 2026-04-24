@@ -17,7 +17,7 @@ def get_active_courses():
         
         # Read from '교육목록' tab
         result = service.spreadsheets().values().get(
-            spreadsheetId=sheet_id, range='교육목록!A2:C'
+            spreadsheetId=sheet_id, range='교육목록!A2:E'
         ).execute()
         
         values = result.get('values', [])
@@ -28,7 +28,7 @@ def get_active_courses():
                 date = row[1]
                 
                 # Exclude specific keywords from showing up in the form
-                if '교육훈련과정 안내' in title or 'FTA' in title:
+                if any(kw in title for kw in ['교육훈련과정 안내', 'FTA', '설명회']):
                     continue
                 
                 member_fee = 77000
@@ -40,6 +40,20 @@ def get_active_courses():
                 elif "연말정산" in title:
                     member_fee = 55000
                     non_member_fee = 132000
+                else:
+                    if len(row) >= 5:
+                        mf_str = str(row[3]).strip()
+                        nmf_str = str(row[4]).strip()
+                        
+                        if mf_str.isdigit():
+                            member_fee = int(mf_str)
+                        else:
+                            member_fee = mf_str # e.g. '확인 필요'
+                            
+                        if nmf_str.isdigit():
+                            non_member_fee = int(nmf_str)
+                        else:
+                            non_member_fee = nmf_str
                 
                 courses.append({
                     "id": i + 1,
