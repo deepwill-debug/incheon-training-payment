@@ -369,18 +369,18 @@
                                     <label className="flex items-center cursor-pointer">
                                         <input type="radio" name="membership" checked={companyInfo.isMember}
                                             onChange={() => handleCompanyChange('isMember', true)} className="mr-2 w-4 h-4" />
-                                        <span className="text-slate-700">회원사 ({selectedCourse.memberFee.toLocaleString()}원)</span>
+                                        <span className="text-slate-700">회원사 ({typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee})</span>
                                     </label>
                                     <label className="flex items-center cursor-pointer">
                                         <input type="radio" name="membership" checked={!companyInfo.isMember}
                                             onChange={() => handleCompanyChange('isMember', false)} className="mr-2 w-4 h-4" />
-                                        <span className="text-slate-700">비회원사 ({selectedCourse.nonMemberFee.toLocaleString()}원)</span>
+                                        <span className="text-slate-700">비회원사 ({typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee})</span>
                                     </label>
                                 </div>
                             </div>
                             <div className="text-right">
                                 <p className="text-slate-600 text-sm">총 교육 인원: {participants.length}명</p>
-                                <p className="text-blue-700 text-2xl font-black">총 {totalPrice.toLocaleString()}원</p>
+                                <p className="text-blue-700 text-2xl font-black">총 {typeof totalPrice === 'number' ? totalPrice.toLocaleString() + '원' : totalPrice}</p>
                             </div>
                         </section>
 

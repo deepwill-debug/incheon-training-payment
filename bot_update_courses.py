@@ -100,8 +100,8 @@ def scrape_incheon_korcham():
             pass
             
         # Fetch fees
-        member_fee_val = '확인 필요'
-        non_member_fee_val = '확인 필요'
+        member_fee_val = 77000
+        non_member_fee_val = 176000
         if '무료' in title:
             member_fee_val = 0
             non_member_fee_val = 0

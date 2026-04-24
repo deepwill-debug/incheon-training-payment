@@ -48,12 +48,12 @@ def get_active_courses():
                         if mf_str.isdigit():
                             member_fee = int(mf_str)
                         else:
-                            member_fee = mf_str # e.g. '확인 필요'
+                            member_fee = 77000 # default if '확인 필요'
                             
                         if nmf_str.isdigit():
                             non_member_fee = int(nmf_str)
                         else:
-                            non_member_fee = nmf_str
+                            non_member_fee = 176000 # default if '확인 필요'
                 
                 courses.append({
                     "id": i + 1,
