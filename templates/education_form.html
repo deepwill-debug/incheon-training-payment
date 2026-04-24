@@ -149,7 +149,7 @@
 
         const selectedCourse = courses.find(c => c.id === selectedCourseId) || courses[0] || { memberFee: 0, nonMemberFee: 0, name: '' };
         const unitPrice = companyInfo.isMember ? selectedCourse.memberFee : selectedCourse.nonMemberFee;
-        const totalPrice = (unitPrice || 0) * participants.length;
+        const totalPrice = (typeof unitPrice === 'number') ? unitPrice * participants.length : unitPrice;
 
         const handleCompanyChange = (name, value) => {
             setCompanyInfo(prev => ({ ...prev, [name]: value }));

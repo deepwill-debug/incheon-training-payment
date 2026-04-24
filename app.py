@@ -42,8 +42,8 @@ def get_active_courses():
                     non_member_fee = 132000
                 else:
                     if len(row) >= 5:
-                        mf_str = str(row[3]).strip()
-                        nmf_str = str(row[4]).strip()
+                        mf_str = str(row[3]).strip().replace(',', '')
+                        nmf_str = str(row[4]).strip().replace(',', '')
                         
                         if mf_str.isdigit():
                             member_fee = int(mf_str)
