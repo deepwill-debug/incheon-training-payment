@@ -53,6 +53,11 @@ def scrape_incheon_korcham():
         # Only keep '접수중'
         if '접수중' not in status:
             continue
+
+        # Exclude specific keywords
+        exclude_keywords = ['교육훈련과정 안내', 'FTA']
+        if any(keyword in title for keyword in exclude_keywords):
+            continue
             
         # Date filtering
         # Dates look like YYYY.MM.DD or YYYY.MM.DD~YYYY.MM.DD

@@ -27,6 +27,10 @@ def get_active_courses():
                 title = row[0]
                 date = row[1]
                 
+                # Exclude specific keywords from showing up in the form
+                if '교육훈련과정 안내' in title or 'FTA' in title:
+                    continue
+                
                 member_fee = 77000
                 non_member_fee = 176000
                 

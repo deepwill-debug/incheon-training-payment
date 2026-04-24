@@ -94,11 +94,12 @@ def get_service():
     
     if service_account_info:
         try:
-            info = json.loads(service_account_info)
+            info = json.loads(service_account_info, strict=False)
             creds = service_account.Credentials.from_service_account_info(
                 info, scopes=['https://www.googleapis.com/auth/spreadsheets']
             )
-        except:
+        except Exception as e:
+            print(f"Failed to load GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
             pass
     else:
         key_file = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY_PATH', 'service-account.json')
