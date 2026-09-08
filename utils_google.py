@@ -12,10 +12,44 @@ _MEMBER_CACHE = {
 }
 CACHE_TTL = 900  # 15 minutes cache in seconds
 
-def clean_business_no(no):
-    if not no:
+def clean_digits(val):
+    if not val:
         return ''
-    return re.sub(r'[\s\-]', '', str(no)).strip()
+    return re.sub(r'[^0-9]', '', str(val)).strip()
+
+def clean_business_no(no):
+    return clean_digits(no)
+
+def format_business_no(val):
+    raw = clean_digits(val)[:10]
+    if len(raw) == 10:
+        return f"{raw[:3]}-{raw[3:5]}-{raw[5:]}"
+    elif len(raw) > 5:
+        return f"{raw[:3]}-{raw[3:5]}-{raw[5:]}"
+    elif len(raw) > 3:
+        return f"{raw[:3]}-{raw[3:]}"
+    return raw
+
+def format_phone_no(val):
+    raw = clean_digits(val)[:11]
+    if not raw:
+        return ''
+    if raw.startswith('02'):
+        if len(raw) == 9:
+            return f"{raw[:2]}-{raw[2:5]}-{raw[5:]}"
+        elif len(raw) >= 10:
+            return f"{raw[:2]}-{raw[2:6]}-{raw[6:]}"
+        elif len(raw) > 2:
+            return f"{raw[:2]}-{raw[2:]}"
+        return raw
+    else:
+        if len(raw) == 10:
+            return f"{raw[:3]}-{raw[3:6]}-{raw[6:]}"
+        elif len(raw) >= 11:
+            return f"{raw[:3]}-{raw[3:7]}-{raw[7:]}"
+        elif len(raw) > 3:
+            return f"{raw[:3]}-{raw[3:]}"
+        return raw
 
 def get_member_business_numbers():
     current_time = time.time()
@@ -26,7 +60,7 @@ def get_member_business_numbers():
         service, sheet_id = get_service()
         if service and sheet_id:
             values = []
-            for sheet_name in ['회원사목록', '회원사 목록', '회원사']:
+            for sheet_name in ['회원사목록', '회원사 목록', '회원사', '회원목록', '회원사_목록', '회원']:
                 try:
                     result = service.spreadsheets().values().get(
                         spreadsheetId=sheet_id,
@@ -41,26 +75,31 @@ def get_member_business_numbers():
 
             cleaned_numbers = set()
             for row in values:
-                if row and row[0]:
+                if row and len(row) > 0 and row[0] is not None:
                     cleaned = clean_business_no(row[0])
                     if cleaned:
                         cleaned_numbers.add(cleaned)
 
-            _MEMBER_CACHE['numbers'] = cleaned_numbers
-            _MEMBER_CACHE['timestamp'] = current_time
-            print(f"[MemberCache] Cache updated with {len(cleaned_numbers)} member numbers.")
-            return cleaned_numbers
+            if cleaned_numbers:
+                _MEMBER_CACHE['numbers'] = cleaned_numbers
+                _MEMBER_CACHE['timestamp'] = current_time
+                print(f"[MemberCache] Cache updated with {len(cleaned_numbers)} member numbers.")
+                return cleaned_numbers
     except Exception as e:
         print(f"[MemberCache] Error fetching member business numbers: {e}")
 
     return _MEMBER_CACHE.get('numbers', set())
 
 def check_is_member(business_no):
-    cleaned = clean_business_no(business_no)
-    if not cleaned:
+    try:
+        cleaned = clean_business_no(business_no)
+        if not cleaned:
+            return False
+        members = get_member_business_numbers()
+        return cleaned in members
+    except Exception as e:
+        print(f"[CheckIsMember] Error checking member status: {e}")
         return False
-    members = get_member_business_numbers()
-    return cleaned in members
 
 
 def record_payment(payment_data):
@@ -200,12 +239,12 @@ def submit_application(data):
             except:
                 pass
 
-            # Prepare Row
+            formatted_biz_no = format_business_no(data.get('businessNo'))
             row = [
                 unique_id,
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 data.get('companyName'),
-                data.get('businessNo'),
+                formatted_biz_no,
                 data.get('applicantName'),
                 data.get('courseName'),
                 status_str, # Status ('회원' or '비회원')

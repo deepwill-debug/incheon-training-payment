@@ -57,10 +57,9 @@
         const { useState, useEffect, useMemo } = React;
 
         const validateBusinessNo = (number) => {
-            const regex = /^\d{3}-\d{2}-\d{5}$/;
-            if (!regex.test(number)) return false;
+            const raw = (number || '').replace(/[^0-9]/g, '');
+            if (raw.length !== 10) return false;
 
-            const raw = number.replace(/-/g, '');
             const checkWeights = [1, 3, 7, 1, 3, 7, 1, 3, 5];
             let sum = 0;
 
@@ -71,6 +70,32 @@
             sum += Math.floor((parseInt(raw[8]) * 5) / 10);
             const checkDigit = (10 - (sum % 10)) % 10;
             return checkDigit === parseInt(raw[9]);
+        };
+
+        const formatBusinessNo = (value) => {
+            if (!value) return '';
+            const raw = value.replace(/[^0-9]/g, '').slice(0, 10);
+            if (raw.length <= 3) return raw;
+            if (raw.length <= 5) return `${raw.slice(0, 3)}-${raw.slice(3)}`;
+            return `${raw.slice(0, 3)}-${raw.slice(3, 5)}-${raw.slice(5)}`;
+        };
+
+        const formatPhoneNo = (value) => {
+            if (!value) return '';
+            const raw = value.replace(/[^0-9]/g, '').slice(0, 11);
+            if (!raw) return '';
+
+            if (raw.startsWith('02')) {
+                if (raw.length <= 2) return raw;
+                if (raw.length <= 5) return `${raw.slice(0, 2)}-${raw.slice(2)}`;
+                if (raw.length <= 9) return `${raw.slice(0, 2)}-${raw.slice(2, 5)}-${raw.slice(5)}`;
+                return `${raw.slice(0, 2)}-${raw.slice(2, 6)}-${raw.slice(6)}`;
+            }
+
+            if (raw.length <= 3) return raw;
+            if (raw.length <= 6) return `${raw.slice(0, 3)}-${raw.slice(3)}`;
+            if (raw.length <= 10) return `${raw.slice(0, 3)}-${raw.slice(3, 6)}-${raw.slice(6)}`;
+            return `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
         };
 
         const InputField = ({ label, name, value, onChange, required, placeholder, type = "text", error, success, action }) => (
@@ -138,7 +163,6 @@
                 .then(data => {
                     if (data.success && data.courses.length > 0) {
                         setCourses(data.courses);
-                        // Avoid resetting selection if already valid
                         if (!data.courses.find(c => c.id === selectedCourseId)) {
                             setSelectedCourseId(data.courses[0].id);
                         }
@@ -152,17 +176,28 @@
         const totalPrice = (typeof unitPrice === 'number') ? unitPrice * participants.length : unitPrice;
 
         const handleCompanyChange = (name, value) => {
-            setCompanyInfo(prev => ({ ...prev, [name]: value }));
+            let formattedValue = value;
+            if (name === 'businessNo') {
+                formattedValue = formatBusinessNo(value);
+            } else if (name === 'tel') {
+                formattedValue = formatPhoneNo(value);
+            }
+
+            setCompanyInfo(prev => ({ ...prev, [name]: formattedValue }));
 
             if (name === 'businessNo') {
-                if (value.length >= 10) {
-                    if (validateBusinessNo(value)) {
+                const rawDigits = formattedValue.replace(/[^0-9]/g, '');
+                if (rawDigits.length === 10) {
+                    if (validateBusinessNo(formattedValue)) {
                         setBusinessNoSuccess('유효한 사업자번호입니다.');
                         setBusinessNoError('');
                     } else {
                         setBusinessNoError('올바르지 않은 사업자번호 형식입니다.');
                         setBusinessNoSuccess('');
                     }
+                } else if (rawDigits.length > 0 && rawDigits.length < 10) {
+                    setBusinessNoError('10자리 사업자번호를 입력해주세요.');
+                    setBusinessNoSuccess('');
                 } else {
                     setBusinessNoError('');
                     setBusinessNoSuccess('');
@@ -171,7 +206,11 @@
         };
 
         const handleParticipantChange = (id, name, value) => {
-            setParticipants(prev => prev.map(p => p.id === id ? { ...p, [name]: value } : p));
+            let formattedValue = value;
+            if (name === 'mobile') {
+                formattedValue = formatPhoneNo(value);
+            }
+            setParticipants(prev => prev.map(p => p.id === id ? { ...p, [name]: formattedValue } : p));
         };
 
         const addParticipant = () => {
