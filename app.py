@@ -4,7 +4,7 @@ import uuid
 import requests
 import base64
 from datetime import datetime
-from utils_google import record_payment, submit_application, get_application_status, get_service
+from utils_google import record_payment, submit_application, get_application_status, get_service, check_is_member
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -270,13 +270,83 @@ def verify_member():
 
 @app.route('/api/submit-application', methods=['POST'])
 def api_submit_application():
-    data = request.json
-    # data: companyName, businessNo, applicantName, courseName, orderId
-    app_id, error = submit_application(data)
-    if app_id:
-        return jsonify({'success': True, 'applicationId': app_id})
-    else:
+    data = request.json or {}
+    order_id = data.get('orderId')
+    company_info = data.get('companyInfo') or {}
+    business_no = company_info.get('businessNo') or data.get('businessNo') or ''
+    course_name = data.get('courseName') or ''
+    course_id = data.get('courseId')
+    participants = data.get('participants') or []
+    participant_count = len(participants) if participants else 1
+
+    company_name = company_info.get('companyName') or data.get('companyName') or ''
+    applicant_name = ''
+    if participants and isinstance(participants, list) and len(participants) > 0:
+        applicant_name = participants[0].get('name', '')
+    if not applicant_name:
+        applicant_name = data.get('applicantName', '신청자')
+
+    # 1. Automatic Member Verification via Google Sheet '회원사목록'
+    is_member = check_is_member(business_no)
+
+    # 2. Calculate Final Payment Amount
+    courses = get_active_courses() or []
+    selected_course = None
+    if course_id is not None:
+        selected_course = next((c for c in courses if c['id'] == course_id), None)
+    if not selected_course and course_name:
+        selected_course = next((c for c in courses if c['name'] == course_name), None)
+    if not selected_course and courses:
+        selected_course = courses[0]
+
+    unit_fee = 77000 if is_member else 176000
+    if selected_course:
+        unit_fee = selected_course['memberFee'] if is_member else selected_course['nonMemberFee']
+        if not course_name:
+            course_name = selected_course['name']
+
+    total_amount = unit_fee * participant_count if isinstance(unit_fee, int) else 0
+
+    # 3. Store Application Record to Google Sheet (2026_교육신청현황)
+    submit_data = {
+        'companyName': company_name,
+        'businessNo': business_no,
+        'applicantName': applicant_name,
+        'courseName': course_name,
+        'orderId': order_id,
+        'isMember': is_member,
+        'amount': total_amount
+    }
+    app_id, error = submit_application(submit_data)
+
+    if not app_id:
         return jsonify({'success': False, 'message': f'Failed to save application: {error}'}), 500
+
+    # 4. Save Session Data for Toss Payment Confirmation Callback
+    if order_id:
+        session[f'app_{order_id}'] = {
+            'courseName': course_name,
+            'companyInfo': {
+                'companyName': company_name,
+                'businessNo': business_no,
+                'isMember': is_member
+            },
+            'participants': participants,
+            'totalPrice': total_amount,
+            'applicationId': app_id
+        }
+
+    order_name = f"[{course_name}] ({participant_count}명)"
+    return jsonify({
+        'success': True,
+        'isMember': is_member,
+        'is_member': is_member,
+        'amount': total_amount,
+        'orderId': order_id,
+        'orderName': order_name,
+        'applicationId': app_id,
+        'message': '회원사 할인 적용 완료' if is_member else '비회원가 적용 완료'
+    })
 
 @app.route('/api/check-status/<app_id>')
 def api_check_status(app_id):

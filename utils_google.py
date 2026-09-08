@@ -2,7 +2,66 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import os
 import json
+import time
+import re
 from datetime import datetime
+
+_MEMBER_CACHE = {
+    'timestamp': 0,
+    'numbers': set()
+}
+CACHE_TTL = 900  # 15 minutes cache in seconds
+
+def clean_business_no(no):
+    if not no:
+        return ''
+    return re.sub(r'[\s\-]', '', str(no)).strip()
+
+def get_member_business_numbers():
+    current_time = time.time()
+    if _MEMBER_CACHE['numbers'] and (current_time - _MEMBER_CACHE['timestamp'] < CACHE_TTL):
+        return _MEMBER_CACHE['numbers']
+
+    try:
+        service, sheet_id = get_service()
+        if service and sheet_id:
+            values = []
+            for sheet_name in ['회원사목록', '회원사 목록', '회원사']:
+                try:
+                    result = service.spreadsheets().values().get(
+                        spreadsheetId=sheet_id,
+                        range=f'{sheet_name}!A2:A'
+                    ).execute()
+                    values = result.get('values', [])
+                    if values:
+                        print(f"[MemberCache] Loaded {len(values)} rows from tab '{sheet_name}'")
+                        break
+                except Exception as e:
+                    continue
+
+            cleaned_numbers = set()
+            for row in values:
+                if row and row[0]:
+                    cleaned = clean_business_no(row[0])
+                    if cleaned:
+                        cleaned_numbers.add(cleaned)
+
+            _MEMBER_CACHE['numbers'] = cleaned_numbers
+            _MEMBER_CACHE['timestamp'] = current_time
+            print(f"[MemberCache] Cache updated with {len(cleaned_numbers)} member numbers.")
+            return cleaned_numbers
+    except Exception as e:
+        print(f"[MemberCache] Error fetching member business numbers: {e}")
+
+    return _MEMBER_CACHE.get('numbers', set())
+
+def check_is_member(business_no):
+    cleaned = clean_business_no(business_no)
+    if not cleaned:
+        return False
+    members = get_member_business_numbers()
+    return cleaned in members
+
 
 def record_payment(payment_data):
     try:
@@ -119,18 +178,18 @@ def get_service():
 
 def submit_application(data):
     unique_id = None
+    is_member = data.get('isMember', False)
+    status_str = '회원' if is_member else '비회원'
+    amount = data.get('amount', 0)
+
     try:
-        # DB Structure: { 'YYYYMMDD-001': { data..., status: '대기' } }
-        
         # 1. Try Google Sheets
         service, sheet_id = get_service()
         
         if service:
-            # Generate ID: YYYYMMDD-HHMMSS (Simple unique ID)
             today_str = datetime.now().strftime('%Y%m%d')
             unique_id = f"{today_str}-{datetime.now().strftime('%H%M%S')}" 
             
-            # Try to make it -001 style
             try:
                 result = service.spreadsheets().values().get(
                     spreadsheetId=sheet_id, range='2026_교육신청현황!A:A'
@@ -149,9 +208,9 @@ def submit_application(data):
                 data.get('businessNo'),
                 data.get('applicantName'),
                 data.get('courseName'),
-                '대기', # Status
-                0,      # Amount
-                '',     # Method
+                status_str, # Status ('회원' or '비회원')
+                amount,     # Amount
+                '',         # Method
                 data.get('orderId')
             ]
 
@@ -184,8 +243,8 @@ def submit_application(data):
         'businessNo': data.get('businessNo'),
         'applicantName': data.get('applicantName'),
         'courseName': data.get('courseName'),
-        'status': '대기',
-        'amount': 0,
+        'status': status_str,
+        'amount': amount,
         'orderId': data.get('orderId')
     }
     save_local_db(db)
