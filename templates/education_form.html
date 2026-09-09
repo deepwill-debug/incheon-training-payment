@@ -57,10 +57,9 @@
         const { useState, useEffect, useMemo } = React;
 
         const validateBusinessNo = (number) => {
-            const regex = /^\d{3}-\d{2}-\d{5}$/;
-            if (!regex.test(number)) return false;
+            const raw = (number || '').replace(/[^0-9]/g, '');
+            if (raw.length !== 10) return false;
 
-            const raw = number.replace(/-/g, '');
             const checkWeights = [1, 3, 7, 1, 3, 7, 1, 3, 5];
             let sum = 0;
 
@@ -71,6 +70,32 @@
             sum += Math.floor((parseInt(raw[8]) * 5) / 10);
             const checkDigit = (10 - (sum % 10)) % 10;
             return checkDigit === parseInt(raw[9]);
+        };
+
+        const formatBusinessNo = (value) => {
+            if (!value) return '';
+            const raw = value.replace(/[^0-9]/g, '').slice(0, 10);
+            if (raw.length <= 3) return raw;
+            if (raw.length <= 5) return `${raw.slice(0, 3)}-${raw.slice(3)}`;
+            return `${raw.slice(0, 3)}-${raw.slice(3, 5)}-${raw.slice(5)}`;
+        };
+
+        const formatPhoneNo = (value) => {
+            if (!value) return '';
+            const raw = value.replace(/[^0-9]/g, '').slice(0, 11);
+            if (!raw) return '';
+
+            if (raw.startsWith('02')) {
+                if (raw.length <= 2) return raw;
+                if (raw.length <= 5) return `${raw.slice(0, 2)}-${raw.slice(2)}`;
+                if (raw.length <= 9) return `${raw.slice(0, 2)}-${raw.slice(2, 5)}-${raw.slice(5)}`;
+                return `${raw.slice(0, 2)}-${raw.slice(2, 6)}-${raw.slice(6)}`;
+            }
+
+            if (raw.length <= 3) return raw;
+            if (raw.length <= 6) return `${raw.slice(0, 3)}-${raw.slice(3)}`;
+            if (raw.length <= 10) return `${raw.slice(0, 3)}-${raw.slice(3, 6)}-${raw.slice(6)}`;
+            return `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
         };
 
         const InputField = ({ label, name, value, onChange, required, placeholder, type = "text", error, success, action }) => (
@@ -138,7 +163,6 @@
                 .then(data => {
                     if (data.success && data.courses.length > 0) {
                         setCourses(data.courses);
-                        // Avoid resetting selection if already valid
                         if (!data.courses.find(c => c.id === selectedCourseId)) {
                             setSelectedCourseId(data.courses[0].id);
                         }
@@ -152,17 +176,28 @@
         const totalPrice = (typeof unitPrice === 'number') ? unitPrice * participants.length : unitPrice;
 
         const handleCompanyChange = (name, value) => {
-            setCompanyInfo(prev => ({ ...prev, [name]: value }));
+            let formattedValue = value;
+            if (name === 'businessNo') {
+                formattedValue = formatBusinessNo(value);
+            } else if (name === 'tel') {
+                formattedValue = formatPhoneNo(value);
+            }
+
+            setCompanyInfo(prev => ({ ...prev, [name]: formattedValue }));
 
             if (name === 'businessNo') {
-                if (value.length >= 10) {
-                    if (validateBusinessNo(value)) {
+                const rawDigits = formattedValue.replace(/[^0-9]/g, '');
+                if (rawDigits.length === 10) {
+                    if (validateBusinessNo(formattedValue)) {
                         setBusinessNoSuccess('유효한 사업자번호입니다.');
                         setBusinessNoError('');
                     } else {
                         setBusinessNoError('올바르지 않은 사업자번호 형식입니다.');
                         setBusinessNoSuccess('');
                     }
+                } else if (rawDigits.length > 0 && rawDigits.length < 10) {
+                    setBusinessNoError('10자리 사업자번호를 입력해주세요.');
+                    setBusinessNoSuccess('');
                 } else {
                     setBusinessNoError('');
                     setBusinessNoSuccess('');
@@ -171,7 +206,11 @@
         };
 
         const handleParticipantChange = (id, name, value) => {
-            setParticipants(prev => prev.map(p => p.id === id ? { ...p, [name]: value } : p));
+            let formattedValue = value;
+            if (name === 'mobile') {
+                formattedValue = formatPhoneNo(value);
+            }
+            setParticipants(prev => prev.map(p => p.id === id ? { ...p, [name]: formattedValue } : p));
         };
 
         const addParticipant = () => {
@@ -224,108 +263,82 @@
             }
         };
 
-        const [applicationId, setApplicationId] = useState(null);
-        const [appStatus, setAppStatus] = useState('idle'); // idle, submitting, pending, confirmed
-
-        // Polling Effect
-        useEffect(() => {
-            let interval;
-            if (appStatus === 'pending' && applicationId) {
-                interval = setInterval(async () => {
-                    try {
-                        const response = await fetch(`/api/check-status/${applicationId}`);
-                        const result = await response.json();
-
-                        if (result.success) {
-                            let newMemberStatus = null;
-                            if (result.status === '회원') newMemberStatus = true;
-                            if (result.status === '비회원') newMemberStatus = false;
-
-                            if (newMemberStatus !== null) {
-                                clearInterval(interval);
-                                setAppStatus('confirmed');
-                                handleCompanyChange('isMember', newMemberStatus);
-
-                                // Trigger Payment Immediately
-                                // We need to recalculate price based on new status
-                                const newUnitPrice = newMemberStatus ? selectedCourse.memberFee : selectedCourse.nonMemberFee;
-                                const newTotalPrice = newUnitPrice * participants.length;
-
-                                alert(`회원 여부가 확인되었습니다: ${result.status}\n결제를 진행합니다.`);
-                                triggerPayment(newTotalPrice, applicationId, newMemberStatus);
-                            }
-                        }
-                    } catch (e) {
-                        console.error("Polling error", e);
-                    }
-                }, 5000); // Poll every 5 seconds
-            }
-            return () => clearInterval(interval);
-        }, [appStatus, applicationId, participants]);
-
-        const triggerPayment = (amount, appId, isMember) => {
-            // 1. Save session info for success callback (still needed for now)
-            fetch('/api/save-application', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderId,
-                    courseName: selectedCourse.name,
-                    companyInfo: { ...companyInfo, isMember }, // Ensure updated member status
-                    participants,
-                    totalPrice: amount
-                })
-            }).then(() => {
-                const orderName = `[${selectedCourse.name}] (${participants.length}명)`;
-                tossPayments.requestPayment('카드', {
-                    amount: amount,
-                    orderId: orderId, // We use the original UUID as OrderID
-                    orderName: orderName,
-                    customerName: participants[0]?.name || '신청자',
-                    successUrl: window.location.origin + '/success',
-                    failUrl: window.location.origin + '/fail',
-                }).catch(error => {
-                    if (error.code !== 'USER_CANCEL') alert(error.message);
-                });
-            });
-        };
+        const [isSubmitting, setIsSubmitting] = useState(false);
 
         const handleSubmit = async (e) => {
             e.preventDefault();
             if (!agreed) return;
+
+            if (!companyInfo.companyName) {
+                alert('업체명을 입력해주세요.');
+                return;
+            }
+
+            if (!companyInfo.businessNo || companyInfo.businessNo.length < 10) {
+                alert('사업자번호를 입력해주세요.');
+                return;
+            }
 
             if (companyInfo.businessNo && !validateBusinessNo(companyInfo.businessNo)) {
                 alert('사업자번호를 확인해주세요.');
                 return;
             }
 
-            setAppStatus('submitting');
+            if (!participants || participants.length === 0 || !participants[0].name) {
+                alert('참가자 성명을 입력해주세요.');
+                return;
+            }
+
+            setIsSubmitting(true);
 
             try {
-                // 1. Submit Application to Google Sheet (Step 1)
+                // 1. Submit Application to backend (Auto member check & amount calculation)
                 const response = await fetch('/api/submit-application', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        companyName: companyInfo.companyName,
-                        businessNo: companyInfo.businessNo,
-                        applicantName: participants[0]?.name,
+                        orderId: orderId,
+                        courseId: selectedCourse.id,
                         courseName: selectedCourse.name,
-                        orderId: orderId
+                        companyInfo: companyInfo,
+                        participants: participants
                     })
                 });
 
                 const result = await response.json();
-                if (result.success) {
-                    setApplicationId(result.applicationId);
-                    setAppStatus('pending'); // Start Polling
-                } else {
-                    throw new Error(result.message);
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || '신청 처리 중 오류가 발생했습니다.');
                 }
+
+                handleCompanyChange('isMember', result.isMember);
+
+                const finalAmount = result.amount;
+                const orderName = `[${selectedCourse.name}] (${participants.length}명)`;
+
+                if (!tossPayments) {
+                    alert('결제 모듈을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                // 2. Launch Toss Payments SDK Immediately
+                tossPayments.requestPayment('카드', {
+                    amount: finalAmount,
+                    orderId: orderId,
+                    orderName: orderName,
+                    customerName: participants[0]?.name || '신청자',
+                    successUrl: window.location.origin + '/success',
+                    failUrl: window.location.origin + '/fail',
+                }).catch(error => {
+                    setIsSubmitting(false);
+                    if (error.code !== 'USER_CANCEL') {
+                        alert(error.message || '결제 호출 중 오류가 발생했습니다.');
+                    }
+                });
 
             } catch (err) {
                 alert('신청 접수 중 오류가 발생했습니다: ' + err.message);
-                setAppStatus('idle');
+                setIsSubmitting(false);
             }
         };
 
@@ -357,7 +370,6 @@
                                         </option>
                                     ))}
                                 </select>
-                                {/* Tuition fee message removed as per user request */}
                             </div>
                         </section>
 
@@ -513,14 +525,26 @@
                             {!agreed && <p className="text-red-500 text-sm mb-3">개인정보 수집 및 이용에 동의하셔야 신청이 가능합니다.</p>}
                             <button
                                 type="submit"
-                                disabled={!agreed}
-                                className={`px-10 py-3 rounded-md text-lg font-bold shadow-lg transform transition flex items-center ${agreed ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                disabled={!agreed || isSubmitting}
+                                className={`px-10 py-3 rounded-md text-lg font-bold shadow-lg transform transition flex items-center ${agreed && !isSubmitting ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
-                                저장 후 다음 (결제)
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
+                                {isSubmitting ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        회원 확인 및 결제 준비 중...
+                                    </>
+                                ) : (
+                                    <>
+                                        결제하기
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>
@@ -531,23 +555,6 @@
                         <p>인천광역시 남동구 은봉로 60번길 46 | Tel: 032-810-2800 | Fax: 032-810-2806</p>
                     </div>
                 </div>
-
-                {/* Waiting Modal */}
-                {appStatus === 'pending' && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-8 rounded-lg shadow-2xl max-w-md w-full text-center">
-                            <div className="mb-4 flex justify-center">
-                                <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">담당자가 회원 여부를 확인 중입니다.</h3>
-                            <p className="text-gray-600 mb-6">잠시만 기다려 주세요...</p>
-                            <div className="text-sm text-gray-400">신청번호: {applicationId}</div>
-                        </div>
-                    </div>
-                )}
             </div>
         );
         };
