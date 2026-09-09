@@ -19,13 +19,42 @@ def parse_fee(fee_val, default_val):
         return int(digits)
     return default_val
 
+DEFAULT_CURRICULUM = {
+    "산업안전": ["유해, 위험기계기구 방호 조치", "기계별 작업 시작 전 점검사항", "점검 이후 평가와 컨설팅", "산업안전보건 및 위험성 평가 관련 법률"],
+    "퇴직급여": ["임원 퇴직소득 한도와 과세이연제도", "퇴직급여충당금의 세무상 한도", "세무상 퇴직급여충당금 설정 전 잔액", "확정급여형 및 확정기여형 퇴직연금"],
+    "해외시장": ["글로벌 마케팅 전략과 프롬프트 활용", "해외바이어 맞춤형 홍보 콘텐츠 제작", "바이어 협상 전략 및 계약 실무", "VBA 활용 수출 프로세스 자동화"],
+    "구매경쟁력": ["구매관리의 역할과 협력업체 관리", "신규업체 선정절차 및 평가 기준", "협력업체 납기관리 방안과 체크포인트", "정기평가의 중요성과 평가 방법"],
+    "포괄임금제": ["포괄임금제 및 고정OT 약정과 노동법", "제도 도입 및 운영의 기초", "고정 OT 약정 적용 실무", "법률상 쟁점과 노무관리 쟁점"]
+}
+
+def get_curriculum_for_title(title, raw_content=None):
+    if raw_content and str(raw_content).strip():
+        lines = [line.strip('•\t- ') for line in str(raw_content).split('\n') if line.strip()]
+        if lines:
+            return lines
+    for key, items in DEFAULT_CURRICULUM.items():
+        if key in title:
+            return items
+    return ["기업 실무 맞춤형 전문 핵심 교육", "사례 분석 및 수강생 질의응답", "교육 수료 후 현장 적용 가이드 제공"]
+
+def get_category_info(title, raw_cat=None):
+    if raw_cat and str(raw_cat).strip():
+        cat = str(raw_cat).strip()
+        if "AI" in cat or "아카데미" in cat:
+            return "인천AI아카데미", "AI 기술과 디지털 전환 시대에 대응하기 위해 기업 임직원 대상 실무 중심의 AI 활용 교육"
+        return cat, "기업 현장에서 필요한 실무 중심 교육을 통해 임직원의 직무 전문성과 업무 역량 강화 지원"
+    
+    if "AI" in title or "아카데미" in title:
+        return "인천AI아카데미", "AI 기술과 디지털 전환 시대에 대응하기 위해 기업 임직원 대상 실무 중심의 AI 활용 교육"
+    return "사무관리분야 과정", "기업 현장에서 필요한 실무 중심 교육을 통해 임직원의 직무 전문성과 업무 역량 강화 지원"
+
 def get_active_courses():
     try:
         service, sheet_id = get_service()
         if not service:
             return None
         
-        # Read from '교육목록' tab (Columns A~I: 교육명, 상태, 교육일시, 교육시간, 장소, 강사명, 회원가, 비회원가, 상세URL)
+        # Read from '교육목록' tab
         result = service.spreadsheets().values().get(
             spreadsheetId=sheet_id, range='교육목록!A2:Z'
         ).execute()
@@ -38,7 +67,6 @@ def get_active_courses():
                 if not title or title == '제목' or title.startswith('교육명'):
                     continue
 
-                # 9-column layout: [교육명(A), 상태(B), 교육일시(C), 교육시간(D), 장소(E), 강사명(F), 회원가(G), 비회원가(H), 상세URL(I)]
                 raw_status = str(row[1]).strip() if len(row) > 1 else '접수중'
                 status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
                 
@@ -47,7 +75,6 @@ def get_active_courses():
                 location = str(row[4]).strip() if len(row) > 4 else ''
                 instructor = str(row[5]).strip() if len(row) > 5 else ''
 
-                # Price calculation with flexible column count fallback
                 if len(row) >= 8:
                     member_fee = parse_fee(row[6], 0)
                     non_member_fee = parse_fee(row[7], 0)
@@ -57,6 +84,9 @@ def get_active_courses():
                     non_member_fee = parse_fee(row[5], 0) if len(row) > 5 else 0
                     link = str(row[7]).strip() if len(row) > 7 else '#'
 
+                category, cat_subtitle = get_category_info(title, row[9] if len(row) > 9 else None)
+                curriculum = get_curriculum_for_title(title, row[10] if len(row) > 10 else None)
+
                 courses.append({
                     "id": i + 1,
                     "title": title,
@@ -64,10 +94,13 @@ def get_active_courses():
                     "status": status,
                     "date": date,
                     "time": time_str,
-                    "location": location,
-                    "instructor": instructor,
+                    "location": location or '인천상공회의소 3층 교육장',
+                    "instructor": instructor or '전문 강사',
                     "memberFee": member_fee,
                     "nonMemberFee": non_member_fee,
+                    "category": category,
+                    "categorySubtitle": cat_subtitle,
+                    "curriculum": curriculum,
                     "link": link,
                     "detailUrl": link
                 })
