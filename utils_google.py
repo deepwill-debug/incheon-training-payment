@@ -110,9 +110,6 @@ def record_payment(payment_data):
             print('Data to be recorded:', payment_data)
             return
 
-        # Prepare credentials
-        # 1. Check for env var with JSON content
-        # 2. Check for service-account.json file path
         creds = None
         service_account_info = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
         
@@ -133,8 +130,6 @@ def record_payment(payment_data):
 
         service = build('sheets', 'v4', credentials=creds)
 
-        # Prepare values
-        # Date, Course Name, Applicant, Company Name, Amount, Method, Order ID
         date_str = datetime.fromisoformat(payment_data['approvedAt'].replace('Z', '+00:00')).strftime('%Y-%m-%d %H:%M:%S')
         values = [[
             date_str,
@@ -162,7 +157,6 @@ def record_payment(payment_data):
     except Exception as e:
         print(f"Failed to record to Google Sheet: {e}")
 
-# Local Fallback path
 LOCAL_DB_PATH = 'applications_local_db.json'
 
 def load_local_db():
@@ -183,7 +177,6 @@ def save_local_db(data):
 
 def get_service():
     sheet_id = os.environ.get('GOOGLE_SHEET_ID')
-    # If no sheet ID, return None to trigger fallback
     if not sheet_id:
         return None, None
 
@@ -222,7 +215,6 @@ def submit_application(data):
     amount = data.get('amount', 0)
 
     try:
-        # 1. Try Google Sheets
         service, sheet_id = get_service()
         
         if service:
@@ -247,9 +239,9 @@ def submit_application(data):
                 formatted_biz_no,
                 data.get('applicantName'),
                 data.get('courseName'),
-                status_str, # Status ('회원' or '비회원')
-                amount,     # Amount
-                '',         # Method
+                status_str,
+                amount,
+                '',
                 data.get('orderId')
             ]
 
@@ -264,9 +256,7 @@ def submit_application(data):
 
     except Exception as e:
         print(f"Google Sheet Submit Error: {e}")
-        # Proceed to fallback
 
-    # 2. Local Fallback
     print("Using Local JSON Fallback for Application Storage")
     db = load_local_db()
     
@@ -291,7 +281,6 @@ def submit_application(data):
     return unique_id, None
 
 def get_application_status(app_id):
-    # 1. Try Google Sheets
     try:
         service, sheet_id = get_service()
         if service:
@@ -301,12 +290,10 @@ def get_application_status(app_id):
             rows = result.get('values', [])
             for row in rows:
                 if row and row[0] == app_id:
-                    # Status is Col G (index 6)
                     return row[6] if len(row) > 6 else '대기'
     except:
         pass
         
-    # 2. Local Fallback
     db = load_local_db()
     if app_id in db:
         return db[app_id].get('status', '대기')
