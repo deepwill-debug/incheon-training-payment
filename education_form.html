@@ -269,6 +269,11 @@
             e.preventDefault();
             if (!agreed) return;
 
+            if (selectedCourse && selectedCourse.status === '마감') {
+                alert('이미 마감된 교육 과정입니다. 해당 과정은 신청하실 수 없습니다.');
+                return;
+            }
+
             if (!companyInfo.companyName) {
                 alert('업체명을 입력해주세요.');
                 return;
@@ -352,25 +357,97 @@
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-8">
-                        {/* Course Selection */}
+                        {/* Course Selection & Detail Info Card */}
                         <section>
                             <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 mb-4 flex items-center">
-                                <span className="mr-2 text-blue-600">00</span> 교육 과정 선택
+                                <span className="mr-2 text-blue-600">00</span> 교육 과정 선택 및 상세 정보
                             </h2>
                             <div className="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-6">
                                 <label className="block text-sm font-bold text-gray-700 mb-2">상공회의소 교육 일정을 확인하여 신청할 과정을 선택해 주세요.</label>
                                 <select
-                                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold"
+                                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-800"
                                     value={selectedCourseId}
                                     onChange={(e) => setSelectedCourseId(Number(e.target.value))}
                                 >
-                                    {courses.map(course => (
-                                        <option key={course.id} value={course.id}>
-                                            {course.name} {course.memberFee === 0 && course.nonMemberFee === 0 ? '(무료)' : ''}
-                                        </option>
-                                    ))}
+                                    {courses.map(course => {
+                                        const isClosed = course.status === '마감';
+                                        return (
+                                            <option key={course.id} value={course.id}>
+                                                [{isClosed ? '접수마감' : '접수중'}] {course.title || course.name} ({course.date})
+                                            </option>
+                                        );
+                                    })}
                                 </select>
-                                {/* Tuition fee message removed as per user request */}
+
+                                {/* Selected Course Detailed Info Card */}
+                                {selectedCourse && (
+                                    <div className="mt-5 bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
+                                            <h3 className="text-base font-bold text-slate-800 flex items-center">
+                                                {selectedCourse.title || selectedCourse.name}
+                                            </h3>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                selectedCourse.status === '마감' 
+                                                    ? 'bg-red-100 text-red-700 border border-red-200' 
+                                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                            }`}>
+                                                ● {selectedCourse.status === '마감' ? '접수마감' : '접수중'}
+                                            </span>
+                                        </div>
+
+                                        {/* Status Warning Banner if closed */}
+                                        {selectedCourse.status === '마감' && (
+                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm font-bold flex items-center gap-2">
+                                                <svg className="w-5 h-5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                                <span>이미 마감된 교육입니다. 해당 과정은 추가 신청 및 결제가 불가능합니다.</span>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm text-gray-600">
+                                            <div className="flex items-start gap-2">
+                                                <span className="font-bold text-gray-800 min-w-[70px]">📅 교육일시:</span>
+                                                <span>{selectedCourse.date || '일정 참조'}</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="font-bold text-gray-800 min-w-[70px]">📍 교육장소:</span>
+                                                <span>{selectedCourse.location || '인천상공회의소 3층 교육장'}</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="font-bold text-gray-800 min-w-[70px]">👨‍🏫 강사명:</span>
+                                                <span>{selectedCourse.instructor || '전문 강사'}</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="font-bold text-gray-800 min-w-[70px]">💳 수강료:</span>
+                                                <div className="flex gap-2 font-semibold">
+                                                    <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                                        회원 {typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee}
+                                                    </span>
+                                                    <span className="text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                                                        비회원 {typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {(selectedCourse.detailUrl || selectedCourse.link) && (selectedCourse.detailUrl !== '#' && selectedCourse.link !== '#') && (
+                                            <div className="mt-4 pt-3 border-t border-gray-100 text-right">
+                                                <a
+                                                    href={selectedCourse.detailUrl || selectedCourse.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline gap-1 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
+                                                >
+                                                    <span>공식 안내문 및 상세 포스터 자세히 보기</span>
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </section>
 
@@ -411,102 +488,96 @@
                                 <InputField
                                     label="사업자번호" name="businessNo" required
                                     value={companyInfo.businessNo} onChange={handleCompanyChange}
-                                    placeholder="000-00-00000"
-                                    error={businessNoError}
-                                    success={businessNoSuccess}
+                                    placeholder="숫자 10자리 입력 (자동 하이픈)"
+                                    error={businessNoError} success={businessNoSuccess}
+                                    action={
+                                        <button
+                                            type="button"
+                                            onClick={verifyMember}
+                                            className="px-4 py-1.5 bg-slate-700 text-white rounded text-sm font-medium hover:bg-slate-800 transition-colors flex-shrink-0"
+                                        >
+                                            회원 조회
+                                        </button>
+                                    }
                                 />
                                 <InputField
                                     label="대표자명" name="ceoName"
                                     value={companyInfo.ceoName} onChange={handleCompanyChange}
+                                    placeholder="대표자 성함"
                                 />
                                 <InputField
-                                    label="전화번호" name="tel"
+                                    label="대표 전화번호" name="tel" required
                                     value={companyInfo.tel} onChange={handleCompanyChange}
-                                    placeholder="032-000-0000"
+                                    placeholder="전화번호 입력 (자동 하이픈)"
+                                />
+                                <InputField
+                                    label="사업장 주소" name="address"
+                                    value={companyInfo.address} onChange={handleCompanyChange}
+                                    placeholder="주소를 입력하세요"
                                 />
                             </div>
                         </section>
 
-                        {/* Participant Information */}
+                        {/* Participants Information */}
                         <section>
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 flex items-center">
-                                    <span className="mr-2 text-blue-600">02</span> 참가자 명단
+                                    <span className="mr-2 text-blue-600">02</span> 수강 신청자 정보
                                 </h2>
                                 <button
                                     type="button"
                                     onClick={addParticipant}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors flex items-center shadow-sm"
+                                    className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded text-sm font-medium hover:bg-blue-100 transition-colors flex items-center"
                                 >
-                                    <span className="mr-1">+</span> 참가자 추가
+                                    + 신청자 추가
                                 </button>
                             </div>
 
-                            {participants.map((p, index) => (
-                                <div key={p.id} className="mb-6 last:mb-0 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                                    <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center text-sm font-bold text-gray-700">
-                                        <span>참가자 {index + 1}</span>
+                            {participants.map((p, idx) => (
+                                <div key={p.id} className="mb-6 border-t-2 border-slate-700 border-b border-gray-200 bg-slate-50/50 p-2 rounded-b">
+                                    <div className="flex justify-between items-center px-4 py-2 bg-slate-100 font-bold text-sm text-slate-700">
+                                        <span>신청자 {idx + 1}</span>
                                         {participants.length > 1 && (
                                             <button
                                                 type="button"
                                                 onClick={() => removeParticipant(p.id)}
-                                                className="text-red-500 hover:text-red-700 font-medium"
+                                                className="text-red-500 hover:text-red-700 text-xs font-normal"
                                             >
                                                 삭제
                                             </button>
                                         )}
                                     </div>
-                                    <div className="border-b border-gray-200">
-                                        <div className="table-row">
-                                            <div className="table-label required">성명</div>
-                                            <div className="table-content">
-                                                <input
-                                                    className="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    value={p.name} onChange={(e) => handleParticipantChange(p.id, 'name', e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="table-row">
-                                            <div className="table-label">부서 / 직위</div>
-                                            <div className="table-content gap-2 flex">
-                                                <input
-                                                    placeholder="부서"
-                                                    className="w-1/2 border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    value={p.dept} onChange={(e) => handleParticipantChange(p.id, 'dept', e.target.value)}
-                                                />
-                                                <input
-                                                    placeholder="직위 (필수)"
-                                                    className="w-1/2 border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 border-blue-200"
-                                                    value={p.pos} onChange={(e) => handleParticipantChange(p.id, 'pos', e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="table-row">
-                                            <div className="table-label required">연락처</div>
-                                            <div className="table-content">
-                                                <input
-                                                    placeholder="010-0000-0000"
-                                                    className="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    value={p.mobile} onChange={(e) => handleParticipantChange(p.id, 'mobile', e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <InputField
+                                        label="성명" name="name" required
+                                        value={p.name} onChange={(n, v) => handleParticipantChange(p.id, n, v)}
+                                        placeholder="수강자 성명"
+                                    />
+                                    <InputField
+                                        label="부서 / 직위" name="dept"
+                                        value={p.dept} onChange={(n, v) => handleParticipantChange(p.id, n, v)}
+                                        placeholder="예: 경영지원팀 / 대리"
+                                    />
+                                    <InputField
+                                        label="휴대폰 번호" name="mobile" required
+                                        value={p.mobile} onChange={(n, v) => handleParticipantChange(p.id, n, v)}
+                                        placeholder="010-0000-0000"
+                                    />
+                                    <InputField
+                                        label="이메일" name="email" required type="email"
+                                        value={p.email} onChange={(n, v) => handleParticipantChange(p.id, n, v)}
+                                        placeholder="example@company.com"
+                                    />
                                 </div>
                             ))}
                         </section>
 
-                        {/* Personal Info Agreement */}
-                        <section>
-                            <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 mb-4 flex items-center">
-                                <span className="mr-2 text-blue-600">03</span> 개인정보 수집 및 이용안내
-                            </h2>
-                            <div className="bg-gray-50 border border-gray-200 p-4 text-sm text-gray-600 h-32 overflow-y-auto mb-3 leading-relaxed">
-                                인천상공회의소는 교육 신청 및 안내를 위해 아래와 같이 개인정보를 수집합니다.<br />
-                                1. 수집항목: 성명, 업체명, 직위, 연락처, 이메일 등<br />
-                                2. 수집목적: 교육 운영 및 이력 관리, 안내사항 공지<br />
-                                3. 보유기간: 교육 종료 후 5년 (관련 법령에 의거)<br />
-                                * 동의를 거부할 권리가 있으나, 거부 시 교육 신청이 제한될 수 있습니다.
+                        {/* Privacy Policy */}
+                        <section className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                            <h3 className="font-bold text-gray-800 mb-2">개인정보 수집 및 이용 동의</h3>
+                            <div className="text-xs text-gray-600 bg-white p-3 border border-gray-200 rounded max-h-32 overflow-y-auto mb-3">
+                                1. 수집 항목: 업체명, 사업자번호, 대표자명, 전화번호, 주소, 수강자 성명, 부서, 직위, 휴대폰, 이메일<br />
+                                2. 수집 목적: 교육 신청 접수, 안내 발송, 수료증 발급 및 회계 처리<br />
+                                3. 보유 기간: 교육 완료 후 관련 법령에 따른 보관 기간까지
                             </div>
                             <div className="flex items-center justify-end">
                                 <label className="inline-flex items-center cursor-pointer">
@@ -524,11 +595,17 @@
                         {/* Submit Button */}
                         <div className="pt-6 border-t border-gray-100 flex flex-col items-center">
                             {!agreed && <p className="text-red-500 text-sm mb-3">개인정보 수집 및 이용에 동의하셔야 신청이 가능합니다.</p>}
+                            {selectedCourse && selectedCourse.status === '마감' && (
+                                <p className="text-red-600 font-bold text-sm mb-3">⚠️ 현재 선택된 과정은 마감되어 신청이 불가능합니다.</p>
+                            )}
                             <button
                                 type="submit"
-                                disabled={!agreed || isSubmitting}
-                                className={`px-10 py-3 rounded-md text-lg font-bold shadow-lg transform transition flex items-center ${agreed && !isSubmitting ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
+                                disabled={!agreed || isSubmitting || (selectedCourse && selectedCourse.status === '마감')}
+                                className={`px-10 py-3 rounded-md text-lg font-bold shadow-lg transform transition flex items-center ${
+                                    agreed && !isSubmitting && selectedCourse && selectedCourse.status !== '마감' 
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95' 
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
                             >
                                 {isSubmitting ? (
                                     <>
@@ -538,6 +615,8 @@
                                         </svg>
                                         회원 확인 및 결제 준비 중...
                                     </>
+                                ) : selectedCourse && selectedCourse.status === '마감' ? (
+                                    <>접수 마감된 교육입니다</>
                                 ) : (
                                     <>
                                         결제하기

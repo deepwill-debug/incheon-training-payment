@@ -27,45 +27,56 @@ def get_active_courses():
         
         # Read from '교육목록' tab
         result = service.spreadsheets().values().get(
-            spreadsheetId=sheet_id, range='교육목록!A2:E'
+            spreadsheetId=sheet_id, range='교육목록!A2:Z'
         ).execute()
         
         values = result.get('values', [])
         courses = []
         for i, row in enumerate(values):
-            if len(row) >= 2:
-                title = str(row[0])
-                date = str(row[1])
-                
-                # Exclude specific keywords from showing up in the form
-                if any(kw in title for kw in ['교육훈련과정 안내', 'FTA', '설명회']):
+            if len(row) >= 1:
+                title = str(row[0]).strip()
+                if not title or title == '제목' or title.startswith('교육명'):
                     continue
+
+                # Auto-detect column format:
+                # User's new layout: [교육명(A), 일시(B), 장소(C), 강사(D), 회원가(E), 비회원가(F), 접수상태(G), 공식링크(H)]
+                # Legacy layout: [교육명(A), 일시(B), 공식링크(C), 회원가(D), 비회원가(E)]
+                is_legacy = len(row) >= 3 and str(row[2]).strip().startswith('http')
                 
-                member_fee = 77000
-                non_member_fee = 176000
-                
-                if "무료" in title:
-                    member_fee = 0
-                    non_member_fee = 0
-                elif "연말정산" in title:
-                    member_fee = 55000
-                    non_member_fee = 132000
+                if is_legacy:
+                    date = str(row[1]).strip() if len(row) > 1 else ''
+                    location = '인천상공회의소 3층 교육장'
+                    instructor = '전문 강사'
+                    link = str(row[2]).strip()
+                    member_fee = parse_fee(row[3], 0) if len(row) > 3 else 0
+                    non_member_fee = parse_fee(row[4], 0) if len(row) > 4 else 0
+                    status = '접수중'
                 else:
-                    if len(row) >= 4:
-                        member_fee = parse_fee(row[3], 77000)
-                    if len(row) >= 5:
-                        non_member_fee = parse_fee(row[4], 176000)
-                
+                    date = str(row[1]).strip() if len(row) > 1 else ''
+                    location = str(row[2]).strip() if len(row) > 2 else ''
+                    instructor = str(row[3]).strip() if len(row) > 3 else ''
+                    member_fee = parse_fee(row[4], 0) if len(row) > 4 else 0
+                    non_member_fee = parse_fee(row[5], 0) if len(row) > 5 else 0
+                    raw_status = str(row[6]).strip() if len(row) > 6 else '접수중'
+                    status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
+                    link = str(row[7]).strip() if len(row) > 7 else '#'
+
                 courses.append({
                     "id": i + 1,
-                    "name": f"{title} ({date})",
+                    "title": title,
+                    "name": f"{title} ({date})" if date else title,
+                    "date": date,
+                    "location": location,
+                    "instructor": instructor,
                     "memberFee": member_fee,
                     "nonMemberFee": non_member_fee,
-                    "link": row[2] if len(row) > 2 else "#"
+                    "status": status,
+                    "link": link,
+                    "detailUrl": link
                 })
         return courses
     except Exception as e:
-        print(f"Error fetching active courses: {e}")
+        print(f"Error fetching active courses from sheet: {e}")
         return None
 
 app = Flask(__name__)
@@ -154,11 +165,16 @@ def verify_member():
                     'code': 'AUTH_REQUIRED',
                     'message': '내부망 로그인 필요 (세션이 없거나 만료됨)'
                 }), 401
+            # If redirected elsewhere, follow manually or error? 
+            # Ideally we stop here.
             
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
         
+        # Find the specific member row/link
+        # Assuming the first result is correct or checking exact match if possible
+        # Look for a link like "fn_egov_view('ID')" or similar in href/onclick
         list_table = soup.find('table', {'class': 'board_list'}) # Hypothetical class
         target_link = None
         
@@ -166,19 +182,24 @@ def verify_member():
             rows = list_table.find_all('tr')
             for row in rows:
                 cols = row.find_all('td')
+                # Assuming business number is in one of the columns
                 if any(business_no in col.get_text() for col in cols):
+                    # Found row, extract ID or link
                     link = row.find('a')
                     if link:
                         href = link.get('href', '')
                         onclick = link.get('onclick', '')
+                        # Extract ID from javascript:fn_egov_view('MEM_ID') logic
                         import re
                         match = re.search(r"['\"](\w+)['\"]", onclick) or re.search(r"id=(\w+)", href)
                         if match:
                             target_id = match.group(1)
-                            target_link = f"{view_url}?memberId={target_id}"
+                            target_link = f"{view_url}?memberId={target_id}" # Hypothetical param
                             break
         
+        # If we can't find a direct link, fallback to text search only (original logic)
         if not target_link:
+             # Fallback: Just return true if business number is found in the list text
              is_member_simple = business_no in response.text
              return jsonify({
                  'success': True,
@@ -186,6 +207,7 @@ def verify_member():
                  'message': '확인 완료 (단순 조회)' if is_member_simple else '회원 정보 없음'
              })
 
+        # 2. Fetch Member Detail Page to check Dues
         detail_resp = requests.post(
             target_link, 
             headers=headers, 
@@ -195,6 +217,9 @@ def verify_member():
         )
         detail_soup = BeautifulSoup(detail_resp.text, 'html.parser')
         
+        # 3. Parse Dues History Table
+        # Look for table with "회비내역" or similar keywords
+        # Columns often: Year, Term, Amount, Date
         dues_table = None
         tables = detail_soup.find_all('table')
         for tbl in tables:
@@ -204,16 +229,18 @@ def verify_member():
 
         is_paid_member = False
         if dues_table:
+            # Check recent year/term
             current_year = datetime.now().year
-            rows = dues_table.find_all('tr')[1:]
+            
+            rows = dues_table.find_all('tr')[1:] # Skip header
             history = []
             
             for r in rows:
                 cols = r.find_all('td')
                 if len(cols) >= 3:
                     try:
-                        year_text = cols[0].get_text(strip=True)
-                        term_text = cols[1].get_text(strip=True)
+                        year_text = cols[0].get_text(strip=True) # e.g. 2025
+                        term_text = cols[1].get_text(strip=True) # e.g. 1기
                         amount_text = cols[2].get_text(strip=True).replace(',', '').replace('원', '')
                         
                         year = int(re.search(r'\d{4}', year_text).group()) if re.search(r'\d{4}', year_text) else 0
@@ -224,6 +251,7 @@ def verify_member():
                     except:
                         continue
             
+            # Simple Logic: Paid in current or last year
             history.sort(key=lambda x: x['year'], reverse=True)
             if history and history[0]['year'] >= current_year - 1:
                 is_paid_member = True
@@ -362,11 +390,13 @@ def success():
     if not payment_key or not order_id or not amount:
         return render_template('fail.html', message='Invalid Request', code='MISSING_PARAMS')
 
+    # Retrieve stored application info
     app_data = session.get(f'app_{order_id}')
     
     print(f"Confirming payment: orderId={order_id}, amount={amount}")
 
     try:
+        # Confirm payment with Toss API
         response = requests.post(
             'https://api.tosspayments.com/v1/payments/confirm',
             json={
@@ -382,6 +412,7 @@ def success():
 
         print(f"Payment confirmed: {payment_data['orderName']}")
 
+        # Prepare record data
         record_info = {
             'orderId': payment_data['orderId'],
             'amount': payment_data['totalAmount'],
@@ -390,12 +421,14 @@ def success():
             'method': payment_data['method']
         }
 
+        # Add detailed info if available
         if app_data:
             record_info['companyName'] = app_data['companyInfo'].get('companyName')
             participant_names = [p.get('name') for p in app_data['participants']]
             record_info['applicant'] = ", ".join(participant_names)
             record_info['participants_count'] = len(app_data['participants'])
 
+        # Record to Google Sheets
         record_payment(record_info)
 
         return render_template('success.html', 
