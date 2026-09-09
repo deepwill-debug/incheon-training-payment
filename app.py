@@ -25,7 +25,7 @@ def get_active_courses():
         if not service:
             return None
         
-        # Read from '교육목록' tab
+        # Read from '교육목록' tab (Columns A~I: 교육명, 상태, 교육일시, 교육시간, 장소, 강사명, 회원가, 비회원가, 상세URL)
         result = service.spreadsheets().values().get(
             spreadsheetId=sheet_id, range='교육목록!A2:Z'
         ).execute()
@@ -38,39 +38,36 @@ def get_active_courses():
                 if not title or title == '제목' or title.startswith('교육명'):
                     continue
 
-                # Auto-detect column format:
-                # User's new layout: [교육명(A), 일시(B), 장소(C), 강사(D), 회원가(E), 비회원가(F), 접수상태(G), 공식링크(H)]
-                # Legacy layout: [교육명(A), 일시(B), 공식링크(C), 회원가(D), 비회원가(E)]
-                is_legacy = len(row) >= 3 and str(row[2]).strip().startswith('http')
+                # 9-column layout: [교육명(A), 상태(B), 교육일시(C), 교육시간(D), 장소(E), 강사명(F), 회원가(G), 비회원가(H), 상세URL(I)]
+                raw_status = str(row[1]).strip() if len(row) > 1 else '접수중'
+                status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
                 
-                if is_legacy:
-                    date = str(row[1]).strip() if len(row) > 1 else ''
-                    location = '인천상공회의소 3층 교육장'
-                    instructor = '전문 강사'
-                    link = str(row[2]).strip()
-                    member_fee = parse_fee(row[3], 0) if len(row) > 3 else 0
-                    non_member_fee = parse_fee(row[4], 0) if len(row) > 4 else 0
-                    status = '접수중'
+                date = str(row[2]).strip() if len(row) > 2 else ''
+                time_str = str(row[3]).strip() if len(row) > 3 else ''
+                location = str(row[4]).strip() if len(row) > 4 else ''
+                instructor = str(row[5]).strip() if len(row) > 5 else ''
+
+                # Price calculation with flexible column count fallback
+                if len(row) >= 8:
+                    member_fee = parse_fee(row[6], 0)
+                    non_member_fee = parse_fee(row[7], 0)
+                    link = str(row[8]).strip() if len(row) > 8 else '#'
                 else:
-                    date = str(row[1]).strip() if len(row) > 1 else ''
-                    location = str(row[2]).strip() if len(row) > 2 else ''
-                    instructor = str(row[3]).strip() if len(row) > 3 else ''
                     member_fee = parse_fee(row[4], 0) if len(row) > 4 else 0
                     non_member_fee = parse_fee(row[5], 0) if len(row) > 5 else 0
-                    raw_status = str(row[6]).strip() if len(row) > 6 else '접수중'
-                    status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
                     link = str(row[7]).strip() if len(row) > 7 else '#'
 
                 courses.append({
                     "id": i + 1,
                     "title": title,
                     "name": f"{title} ({date})" if date else title,
+                    "status": status,
                     "date": date,
+                    "time": time_str,
                     "location": location,
                     "instructor": instructor,
                     "memberFee": member_fee,
                     "nonMemberFee": non_member_fee,
-                    "status": status,
                     "link": link,
                     "detailUrl": link
                 })

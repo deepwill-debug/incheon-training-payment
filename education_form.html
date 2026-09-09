@@ -405,44 +405,44 @@
                                             </div>
                                         )}
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm text-gray-600">
+                                        <div className="space-y-3 mt-4 text-sm text-gray-700">
                                             <div className="flex items-start gap-2">
-                                                <span className="font-bold text-gray-800 min-w-[70px]">📅 교육일시:</span>
-                                                <span>{selectedCourse.date || '일정 참조'}</span>
+                                                <span className="font-bold text-gray-800 min-w-[80px]">📍 일시/장소:</span>
+                                                <span>
+                                                    {selectedCourse.date || '일정 참조'}
+                                                    {selectedCourse.time ? ` (${selectedCourse.time})` : ''} | {selectedCourse.location || '인천상공회의소 3층 교육장'}
+                                                </span>
                                             </div>
+                                            {selectedCourse.instructor && (
+                                                <div className="flex items-start gap-2">
+                                                    <span className="font-bold text-gray-800 min-w-[80px]">👨‍🏫 강사명:</span>
+                                                    <span>{selectedCourse.instructor}</span>
+                                                </div>
+                                            )}
                                             <div className="flex items-start gap-2">
-                                                <span className="font-bold text-gray-800 min-w-[70px]">📍 교육장소:</span>
-                                                <span>{selectedCourse.location || '인천상공회의소 3층 교육장'}</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="font-bold text-gray-800 min-w-[70px]">👨‍🏫 강사명:</span>
-                                                <span>{selectedCourse.instructor || '전문 강사'}</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="font-bold text-gray-800 min-w-[70px]">💳 수강료:</span>
-                                                <div className="flex gap-2 font-semibold">
+                                                <span className="font-bold text-gray-800 min-w-[80px]">💰 수강료:</span>
+                                                <div className="flex flex-wrap items-center gap-2 font-semibold">
                                                     <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                                                        회원 {typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee}
+                                                        회원사 {typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee}
                                                     </span>
                                                     <span className="text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
-                                                        비회원 {typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee}
+                                                        비회원사 {typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee}
                                                     </span>
+                                                    <span className="text-xs text-gray-500 font-normal">(신청 시 자동 판별)</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {(selectedCourse.detailUrl || selectedCourse.link) && (selectedCourse.detailUrl !== '#' && selectedCourse.link !== '#') && (
-                                            <div className="mt-4 pt-3 border-t border-gray-100 text-right">
+                                            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                                <span className="font-bold text-gray-800 text-sm">🔗 상세 내용:</span>
                                                 <a
                                                     href={selectedCourse.detailUrl || selectedCourse.link}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline gap-1 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
                                                 >
-                                                    <span>공식 안내문 및 상세 포스터 자세히 보기</span>
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                    </svg>
+                                                    <span>인천상의 공식 안내문 확인하기 ↗</span>
                                                 </a>
                                             </div>
                                         )}
