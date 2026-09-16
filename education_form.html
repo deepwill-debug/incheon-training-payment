@@ -386,8 +386,20 @@
                                         const cleanTitle = (course.title || course.name || '').trim();
                                         const optionLabel = `${closedPrefix}${cleanTitle}`;
 
+                                        const scheduleText = `${course.date || ''}${course.time ? ` (${course.time})` : ''}`.trim();
+                                        const memberPriceText = typeof course.memberFee === 'number' ? course.memberFee.toLocaleString() + '원' : (course.memberFee || '0원');
+                                        const nonMemberPriceText = typeof course.nonMemberFee === 'number' ? course.nonMemberFee.toLocaleString() + '원' : (course.nonMemberFee || '0원');
+
                                         return (
-                                            <option key={course.id} value={course.id}>
+                                            <option 
+                                                key={course.id} 
+                                                value={course.id}
+                                                data-schedule={scheduleText}
+                                                data-location={course.location || '인천상공회의소 3층 교육장'}
+                                                data-instructor={course.instructor || '전문 강사'}
+                                                data-member-price={memberPriceText}
+                                                data-nonmember-price={nonMemberPriceText}
+                                            >
                                                 {optionLabel}
                                             </option>
                                         );
