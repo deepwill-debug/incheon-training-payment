@@ -89,7 +89,12 @@ def get_active_courses():
                 category, cat_subtitle = get_category_info(title, row[9] if len(row) > 9 else None)
                 curriculum = get_curriculum_for_title(title, row[10] if len(row) > 10 else None)
 
-                formatted_name = f"[{clean_date}] {title}" if clean_date else title
+                if clean_date and time_str and time_str not in clean_date:
+                    full_schedule = f"{clean_date} {time_str}"
+                else:
+                    full_schedule = clean_date or time_str
+
+                formatted_name = f"[{full_schedule}] {title}" if full_schedule else title
 
                 courses.append({
                     "id": i + 1,

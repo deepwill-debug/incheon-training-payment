@@ -384,12 +384,20 @@
                                         const isClosed = course.status === '마감';
                                         const closedPrefix = isClosed ? '[접수마감] ' : '';
                                         const cleanDate = (course.date || '').replace(/^\[|\]$/g, '').trim();
+                                        const timeStr = (course.time || '').trim();
                                         const cleanTitle = (course.title || '').trim();
                                         const fallbackName = (course.name || '').trim();
 
+                                        let fullSchedule = cleanDate;
+                                        if (cleanDate && timeStr && !cleanDate.includes(timeStr)) {
+                                            fullSchedule = `${cleanDate} ${timeStr}`;
+                                        } else if (!cleanDate && timeStr) {
+                                            fullSchedule = timeStr;
+                                        }
+
                                         let optionLabel = '';
-                                        if (cleanDate && cleanTitle) {
-                                            optionLabel = `${closedPrefix}[${cleanDate}] ${cleanTitle}`;
+                                        if (fullSchedule && cleanTitle) {
+                                            optionLabel = `${closedPrefix}[${fullSchedule}] ${cleanTitle}`;
                                         } else if (cleanTitle) {
                                             optionLabel = `${closedPrefix}${cleanTitle}`;
                                         } else {
