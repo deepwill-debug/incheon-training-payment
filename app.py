@@ -54,32 +54,76 @@ def get_active_courses():
         if not service:
             return None
         
-        # Read from '교육목록' tab
+        # Read from '교육목록' tab from A1 to Z
         result = service.spreadsheets().values().get(
-            spreadsheetId=sheet_id, range='교육목록!A2:Z'
+            spreadsheetId=sheet_id, range='교육목록!A1:Z'
         ).execute()
         
         values = result.get('values', [])
+        if not values:
+            return []
+
+        # Default Column Indices based on user specification:
+        # A(0): 교육명, B(1): 교육일정, C(2): 강사, D(3): 시간, E(4): 장소, F(5): 회원가, G(6): 비회원가, H(7): 상세URL, I(8): 상태
+        idx_title = 0
+        idx_date = 1
+        idx_instructor = 2
+        idx_time = 3
+        idx_location = 4
+        idx_member_fee = 5
+        idx_non_member_fee = 6
+        idx_link = 7
+        idx_status = 8
+
+        start_row = 0
+        if len(values) > 0:
+            header_row = [str(cell).strip() for cell in values[0]]
+            if any('교육' in cell or '제목' in cell or '강사' in cell or '회원' in cell for cell in header_row):
+                start_row = 1
+                for c_i, h_text in enumerate(header_row):
+                    if '교육명' in h_text or '제목' in h_text or '강좌명' in h_text:
+                        idx_title = c_i
+                    elif '일정' in h_text or '일시' in h_text:
+                        idx_date = c_i
+                    elif '강사' in h_text:
+                        idx_instructor = c_i
+                    elif '시간' in h_text:
+                        idx_time = c_i
+                    elif '장소' in h_text:
+                        idx_location = c_i
+                    elif '비회원' in h_text:
+                        idx_non_member_fee = c_i
+                    elif '회원가' in h_text or ('회원' in h_text and '비회원' not in h_text):
+                        idx_member_fee = c_i
+                    elif '상세' in h_text or 'URL' in h_text or '링크' in h_text:
+                        idx_link = c_i
+                    elif '상태' in h_text or '접수' in h_text:
+                        idx_status = c_i
+
         courses = []
-        for i, row in enumerate(values):
-            if len(row) >= 1:
-                title = str(row[0]).strip()
+        for i, row in enumerate(values[start_row:]):
+            if len(row) > idx_title:
+                title = str(row[idx_title]).strip()
                 if not title or title == '제목' or title.startswith('교육명'):
                     continue
 
-                raw_status = str(row[1]).strip() if len(row) > 1 else '접수중'
-                status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
+                date = str(row[idx_date]).strip() if len(row) > idx_date else ''
+                instructor = str(row[idx_instructor]).strip() if len(row) > idx_instructor else ''
+                time_str = str(row[idx_time]).strip() if len(row) > idx_time else ''
+                location = str(row[idx_location]).strip() if len(row) > idx_location else ''
                 
-                raw_date = str(row[2]).strip() if len(row) > 2 else ''
-                clean_date = re.sub(r'^[\[\s]+|[\]\s]+$', '', raw_date) if raw_date else ''
-                
-                time_str = str(row[3]).strip() if len(row) > 3 else ''
-                location = str(row[4]).strip() if len(row) > 4 else ''
-                instructor = str(row[5]).strip() if len(row) > 5 else ''
+                member_fee = parse_fee(row[idx_member_fee], 0) if len(row) > idx_member_fee else 0
+                non_member_fee = parse_fee(row[idx_non_member_fee], 0) if len(row) > idx_non_member_fee else 0
+                link = str(row[idx_link]).strip() if len(row) > idx_link else '#'
 
-                member_fee = parse_fee(row[6], 0) if len(row) > 6 else 0
-                non_member_fee = parse_fee(row[7], 0) if len(row) > 7 else 0
-                link = str(row[8]).strip() if len(row) > 8 else '#'
+                raw_status = str(row[idx_status]).strip() if len(row) > idx_status else ''
+                if not raw_status:
+                    row_text = " ".join(str(c) for c in row)
+                    status = '마감' if ('마감' in row_text or '종료' in row_text) else '접수중'
+                else:
+                    status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
+
+                clean_date = re.sub(r'^[\[\s]+|[\]\s]+$', '', date) if date else ''
 
                 category, cat_subtitle = get_category_info(title, row[9] if len(row) > 9 else None)
                 curriculum = get_curriculum_for_title(title, row[10] if len(row) > 10 else None)
@@ -91,8 +135,8 @@ def get_active_courses():
                     "status": status,
                     "date": clean_date,
                     "time": time_str,
-                    "location": location or '인천상공회의소 3층 교육장',
-                    "instructor": instructor or '전문 강사',
+                    "location": location or '인천상공회의소 교육장',
+                    "instructor": instructor or '담당 강사',
                     "memberFee": member_fee,
                     "nonMemberFee": non_member_fee,
                     "category": category,

@@ -358,10 +358,9 @@
                             <div>
                                 <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded">인천상공회의소</span>
                                 <h1 className="text-2xl md:text-3xl font-bold mt-2">교육 참가 신청서</h1>
-                                <p className="text-slate-300 text-sm mt-1">상업 및 기술 실무 교육 수강 신청 및 결제 시스템</p>
                             </div>
                             <div className="text-right text-xs md:text-sm text-slate-300">
-                                <div>📍 장소: 인천상공회의소 3층 교육장</div>
+                                <div>📍 장소: 인천상공회의소 교육장</div>
                                 <div>📞 문의: 032-810-2851</div>
                             </div>
                         </div>
@@ -395,8 +394,8 @@
                                                 key={course.id} 
                                                 value={course.id}
                                                 data-schedule={scheduleText}
-                                                data-location={course.location || '인천상공회의소 3층 교육장'}
-                                                data-instructor={course.instructor || '전문 강사'}
+                                                data-location={course.location || '인천상공회의소 교육장'}
+                                                data-instructor={course.instructor || '담당 강사'}
                                                 data-member-price={memberPriceText}
                                                 data-nonmember-price={nonMemberPriceText}
                                             >
@@ -436,23 +435,20 @@
                                             <div className="flex items-start gap-2">
                                                 <span className="font-bold text-gray-800 min-w-[80px]">📍 일시/장소:</span>
                                                 <span>
-                                                    {selectedCourse.date || '일정 참조'}
-                                                    {selectedCourse.time ? ` (${selectedCourse.time})` : ''} | {selectedCourse.location || '인천상공회의소 3층 교육장'}
+                                                    {selectedCourse.date ? `${selectedCourse.date} | ${selectedCourse.location || '인천상공회의소 교육장'}` : (selectedCourse.time ? `${selectedCourse.time} | ${selectedCourse.location || '인천상공회의소 교육장'}` : `일정 참조 | ${selectedCourse.location || '인천상공회의소 교육장'}`)}
                                                 </span>
                                             </div>
-                                            {selectedCourse.instructor && (
-                                                <div className="flex items-start gap-2">
-                                                    <span className="font-bold text-gray-800 min-w-[80px]">👨‍🏫 강사명:</span>
-                                                    <span>{selectedCourse.instructor}</span>
-                                                </div>
-                                            )}
+                                            <div className="flex items-start gap-2">
+                                                <span className="font-bold text-gray-800 min-w-[80px]">👨‍🏫 강사명:</span>
+                                                <span>{selectedCourse.instructor || '담당 강사'}</span>
+                                            </div>
                                             <div className="flex items-start gap-2">
                                                 <span className="font-bold text-gray-800 min-w-[80px]">💰 수강료:</span>
                                                 <div className="flex flex-wrap items-center gap-2 font-semibold">
-                                                    <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                                    <span className="text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
                                                         회원사 {typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee}
                                                     </span>
-                                                    <span className="text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                                                    <span className="text-gray-700 bg-gray-50 px-2.5 py-0.5 rounded border border-gray-200">
                                                         비회원사 {typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee}
                                                     </span>
                                                     <span className="text-xs text-gray-500 font-normal">(신청 시 자동 판별)</span>
