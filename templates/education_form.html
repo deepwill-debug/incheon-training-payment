@@ -383,21 +383,23 @@
                                     {courses.map(course => {
                                         const isClosed = course.status === '마감';
                                         const closedPrefix = isClosed ? '[접수마감] ' : '';
-                                        const cleanDate = (course.date || '').replace(/^\[|\]$/g, '').trim();
-                                        const cleanTitle = (course.title || '').trim();
-                                        const fallbackName = (course.name || '').trim();
+                                        const cleanTitle = (course.title || course.name || '').trim();
+                                        const optionLabel = `${closedPrefix}${cleanTitle}`;
 
-                                        let optionLabel = '';
-                                        if (cleanDate && cleanTitle) {
-                                            optionLabel = `${closedPrefix}[${cleanDate}] ${cleanTitle}`;
-                                        } else if (cleanTitle) {
-                                            optionLabel = `${closedPrefix}${cleanTitle}`;
-                                        } else {
-                                            optionLabel = `${closedPrefix}${fallbackName}`;
-                                        }
+                                        const scheduleText = `${course.date || ''}${course.time ? ` (${course.time})` : ''}`.trim();
+                                        const memberPriceText = typeof course.memberFee === 'number' ? course.memberFee.toLocaleString() + '원' : (course.memberFee || '0원');
+                                        const nonMemberPriceText = typeof course.nonMemberFee === 'number' ? course.nonMemberFee.toLocaleString() + '원' : (course.nonMemberFee || '0원');
 
                                         return (
-                                            <option key={course.id} value={course.id}>
+                                            <option 
+                                                key={course.id} 
+                                                value={course.id}
+                                                data-schedule={scheduleText}
+                                                data-location={course.location || '인천상공회의소 3층 교육장'}
+                                                data-instructor={course.instructor || '전문 강사'}
+                                                data-member-price={memberPriceText}
+                                                data-nonmember-price={nonMemberPriceText}
+                                            >
                                                 {optionLabel}
                                             </option>
                                         );
