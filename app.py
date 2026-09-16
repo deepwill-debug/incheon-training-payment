@@ -77,29 +77,17 @@ def get_active_courses():
                 location = str(row[4]).strip() if len(row) > 4 else ''
                 instructor = str(row[5]).strip() if len(row) > 5 else ''
 
-                if len(row) >= 8:
-                    member_fee = parse_fee(row[6], 0)
-                    non_member_fee = parse_fee(row[7], 0)
-                    link = str(row[8]).strip() if len(row) > 8 else '#'
-                else:
-                    member_fee = parse_fee(row[4], 0) if len(row) > 4 else 0
-                    non_member_fee = parse_fee(row[5], 0) if len(row) > 5 else 0
-                    link = str(row[7]).strip() if len(row) > 7 else '#'
+                member_fee = parse_fee(row[6], 0) if len(row) > 6 else 0
+                non_member_fee = parse_fee(row[7], 0) if len(row) > 7 else 0
+                link = str(row[8]).strip() if len(row) > 8 else '#'
 
                 category, cat_subtitle = get_category_info(title, row[9] if len(row) > 9 else None)
                 curriculum = get_curriculum_for_title(title, row[10] if len(row) > 10 else None)
 
-                if clean_date and time_str and time_str not in clean_date:
-                    full_schedule = f"{clean_date} {time_str}"
-                else:
-                    full_schedule = clean_date or time_str
-
-                formatted_name = f"[{full_schedule}] {title}" if full_schedule else title
-
                 courses.append({
                     "id": i + 1,
                     "title": title,
-                    "name": formatted_name,
+                    "name": title,
                     "status": status,
                     "date": clean_date,
                     "time": time_str,
