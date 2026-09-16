@@ -70,7 +70,9 @@ def get_active_courses():
                 raw_status = str(row[1]).strip() if len(row) > 1 else '접수중'
                 status = '마감' if ('마감' in raw_status or '종료' in raw_status) else '접수중'
                 
-                date = str(row[2]).strip() if len(row) > 2 else ''
+                raw_date = str(row[2]).strip() if len(row) > 2 else ''
+                clean_date = re.sub(r'^[\[\s]+|[\]\s]+$', '', raw_date) if raw_date else ''
+                
                 time_str = str(row[3]).strip() if len(row) > 3 else ''
                 location = str(row[4]).strip() if len(row) > 4 else ''
                 instructor = str(row[5]).strip() if len(row) > 5 else ''
@@ -87,12 +89,14 @@ def get_active_courses():
                 category, cat_subtitle = get_category_info(title, row[9] if len(row) > 9 else None)
                 curriculum = get_curriculum_for_title(title, row[10] if len(row) > 10 else None)
 
+                formatted_name = f"[{clean_date}] {title}" if clean_date else title
+
                 courses.append({
                     "id": i + 1,
                     "title": title,
-                    "name": f"[{date}] {title}" if date else title,
+                    "name": formatted_name,
                     "status": status,
-                    "date": date,
+                    "date": clean_date,
                     "time": time_str,
                     "location": location or '인천상공회의소 3층 교육장',
                     "instructor": instructor or '전문 강사',

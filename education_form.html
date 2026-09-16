@@ -297,6 +297,8 @@
             setIsSubmitting(true);
 
             try {
+                const cleanCourseName = (selectedCourse.name || selectedCourse.title || '').trim();
+
                 // 1. Submit Application to backend (Auto member check & amount calculation)
                 const response = await fetch('/api/submit-application', {
                     method: 'POST',
@@ -304,7 +306,7 @@
                     body: JSON.stringify({
                         orderId: orderId,
                         courseId: selectedCourse.id,
-                        courseName: selectedCourse.name,
+                        courseName: cleanCourseName,
                         companyInfo: companyInfo,
                         participants: participants
                     })
@@ -318,7 +320,7 @@
                 handleCompanyChange('isMember', result.isMember);
 
                 const finalAmount = result.amount;
-                const orderName = `[${selectedCourse.name}] (${participants.length}명)`;
+                const orderName = `${cleanCourseName} (${participants.length}명)`;
 
                 if (!tossPayments) {
                     alert('결제 모듈을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
@@ -380,12 +382,20 @@
                                 >
                                     {courses.map(course => {
                                         const isClosed = course.status === '마감';
-                                        const closedStr = isClosed ? '[접수마감] ' : '';
-                                        const dateStr = course.date ? `[${course.date}] ` : '';
-                                        const titleStr = course.title || course.name || '';
-                                        const optionLabel = course.date && !titleStr.startsWith('[')
-                                            ? `${closedStr}${dateStr}${titleStr}`
-                                            : `${closedStr}${titleStr}`;
+                                        const closedPrefix = isClosed ? '[접수마감] ' : '';
+                                        const cleanDate = (course.date || '').replace(/^\[|\]$/g, '').trim();
+                                        const cleanTitle = (course.title || '').trim();
+                                        const fallbackName = (course.name || '').trim();
+
+                                        let optionLabel = '';
+                                        if (cleanDate && cleanTitle) {
+                                            optionLabel = `${closedPrefix}[${cleanDate}] ${cleanTitle}`;
+                                        } else if (cleanTitle) {
+                                            optionLabel = `${closedPrefix}${cleanTitle}`;
+                                        } else {
+                                            optionLabel = `${closedPrefix}${fallbackName}`;
+                                        }
+
                                         return (
                                             <option key={course.id} value={course.id}>
                                                 {optionLabel}
