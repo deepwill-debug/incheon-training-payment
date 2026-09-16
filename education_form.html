@@ -412,13 +412,11 @@
                                             <h3 className="text-base font-bold text-slate-800 flex items-center">
                                                 {selectedCourse.title || selectedCourse.name}
                                             </h3>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                selectedCourse.status === '마감' 
-                                                    ? 'bg-red-100 text-red-700 border border-red-200' 
-                                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                            }`}>
-                                                ● {selectedCourse.status === '마감' ? '접수마감' : '접수중'}
-                                            </span>
+                                            {selectedCourse.status === '마감' && (
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                                                    ● 접수마감
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Status Warning Banner if closed */}
@@ -435,7 +433,7 @@
                                             <div className="flex items-start gap-2">
                                                 <span className="font-bold text-gray-800 min-w-[80px]">📍 일시/장소:</span>
                                                 <span>
-                                                    {selectedCourse.date ? `${selectedCourse.date} | ${selectedCourse.location || '인천상공회의소 교육장'}` : (selectedCourse.time ? `${selectedCourse.time} | ${selectedCourse.location || '인천상공회의소 교육장'}` : `일정 참조 | ${selectedCourse.location || '인천상공회의소 교육장'}`)}
+                                                    {selectedCourse.date ? `${selectedCourse.date} | 인천상공회의소` : '인천상공회의소'}
                                                 </span>
                                             </div>
                                             <div className="flex items-start gap-2">
@@ -456,19 +454,17 @@
                                             </div>
                                         </div>
 
-                                        {(selectedCourse.detailUrl || selectedCourse.link) && (selectedCourse.detailUrl !== '#' && selectedCourse.link !== '#') && (
-                                            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                                                <span className="font-bold text-gray-800 text-sm">🔗 상세 내용:</span>
-                                                <a
-                                                    href={selectedCourse.detailUrl || selectedCourse.link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline gap-1 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
-                                                >
-                                                    <span>인천상의 공식 안내문 확인하기 ↗</span>
-                                                </a>
-                                            </div>
-                                        )}
+                                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                            <span className="font-bold text-gray-800 text-sm">🔗 상세 내용:</span>
+                                            <a
+                                                href="https://incheon.korcham.net/front/event/eventList.do?menuId=10149"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline gap-1 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
+                                            >
+                                                <span>인천상의 공식 안내문 확인하기 ↗</span>
+                                            </a>
+                                        </div>
                                     </div>
                                 )}
                             </div>
