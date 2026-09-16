@@ -90,7 +90,7 @@ def get_active_courses():
                 courses.append({
                     "id": i + 1,
                     "title": title,
-                    "name": f"{title} ({date})" if date else title,
+                    "name": f"[{date}] {title}" if date else title,
                     "status": status,
                     "date": date,
                     "time": time_str,
