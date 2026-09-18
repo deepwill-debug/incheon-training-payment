@@ -186,6 +186,7 @@
         const [agreed, setAgreed] = useState(false);
         const [businessNoError, setBusinessNoError] = useState('');
         const [businessNoSuccess, setBusinessNoSuccess] = useState('');
+        const [showRefundModal, setShowRefundModal] = useState(false);
 
         useEffect(() => {
             fetch('/api/courses')
@@ -678,11 +679,80 @@
                         </div>
                     </form>
 
-                    {/* Footer Info */}
-                    <div className="bg-gray-50 p-6 border-t border-gray-200 text-xs text-gray-500">
-                        <p className="font-bold mb-1">인천상공회의소 (Education Service Center)</p>
-                        <p>인천광역시 남동구 은봉로 60번길 46 | Tel: 032-810-2800 | Fax: 032-810-2806</p>
-                    </div>
+                    {/* Toss Payments PG Approval Footer */}
+                    <footer className="bg-slate-800 text-slate-300 py-8 px-6 text-xs mt-12 rounded-b-lg border-t border-slate-700">
+                        <div className="max-w-4xl mx-auto space-y-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700 pb-4 gap-3">
+                                <div>
+                                    <h4 className="text-sm font-bold text-white mb-1">인천상공회의소 (Incheon Chamber of Commerce & Industry)</h4>
+                                    <p className="text-slate-400">토스페이먼츠 PG 가맹점 대표 사업자 정보</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRefundModal(true)}
+                                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-amber-300 border border-slate-600 rounded transition font-medium text-xs flex items-center gap-1.5"
+                                >
+                                    <span>📜</span> 취소 및 환불규정 보기
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-400 leading-relaxed">
+                                <div className="space-y-1">
+                                    <p><strong className="text-slate-200">상호명:</strong> 인천상공회의소 &nbsp;|&nbsp; <strong className="text-slate-200">대표자:</strong> 박주봉</p>
+                                    <p><strong className="text-slate-200">사업자등록번호:</strong> 139-82-00696</p>
+                                    <p><strong className="text-slate-200">사업장 주소:</strong> 인천광역시 남동구 은봉로60번길 46 (논현동, 인천상공회의소)</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p><strong className="text-slate-200">교육 및 결제 문의:</strong> 032-810-2851 (경제진흥실)</p>
+                                    <p><strong className="text-slate-200">팩스:</strong> 032-810-2807</p>
+                                    <p className="text-slate-500 pt-1">Copyright © Incheon Chamber of Commerce & Industry. All rights reserved.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+
+                    {/* Refund Policy Modal */}
+                    {showRefundModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-slate-800 border border-slate-100">
+                                <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <span className="text-blue-600">📜</span> 취소 및 환불 규정
+                                    </h3>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowRefundModal(false)}
+                                        className="text-gray-400 hover:text-gray-600 font-bold text-xl leading-none px-2 py-1"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <div className="space-y-3.5 text-sm text-slate-700 mb-6 leading-relaxed">
+                                    <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-lg flex items-start gap-2.5">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
+                                        <span>교육 시작 1일 전까지 취소 시 <strong className="text-blue-700">100% 전액 환불</strong> 가능합니다.</span>
+                                    </div>
+                                    <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-lg flex items-start gap-2.5">
+                                        <span className="bg-amber-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
+                                        <span>교육 당일 취소 및 불참 시 교재 및 좌석 배정 비용으로 인해 <strong className="text-amber-800">환불이 불가</strong>할 수 있습니다.</span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-2.5">
+                                        <span className="bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+                                        <span>환불 신청은 <strong className="text-slate-900">유선(032-810-2851)</strong>으로 접수해 주시기 바랍니다.</span>
+                                    </div>
+                                </div>
+                                <div className="text-right border-t border-slate-100 pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRefundModal(false)}
+                                        className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium text-sm transition shadow-sm"
+                                    >
+                                        확인 및 닫기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         );
