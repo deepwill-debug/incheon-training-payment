@@ -48,6 +48,51 @@ def get_category_info(title, raw_cat=None):
         return "인천AI아카데미", "AI 기술과 디지털 전환 시대에 대응하기 위해 기업 임직원 대상 실무 중심의 AI 활용 교육"
     return "사무관리분야 과정", "기업 현장에서 필요한 실무 중심 교육을 통해 임직원의 직무 전문성과 업무 역량 강화 지원"
 
+def parse_course_date(date_str):
+    if not date_str:
+        return None
+    s = str(date_str).strip()
+    
+    # 1. Full YYYY-MM-DD or YYYY.MM.DD
+    m_full = re.search(r'(20\d{2})[.\/-]\s*(\d{1,2})[.\/-]\s*(\d{1,2})', s)
+    if m_full:
+        try:
+            return datetime(int(m_full.group(1)), int(m_full.group(2)), int(m_full.group(3))).date()
+        except:
+            pass
+            
+    # 2. MM.DD or M.D (e.g. 9.17(목), 09.28, 9/17, 9월 17일)
+    m_md = re.search(r'(\d{1,2})[.\/-월]\s*(\d{1,2})', s)
+    if m_md:
+        try:
+            month = int(m_md.group(1))
+            day = int(m_md.group(2))
+            today = datetime.now().date()
+            year = today.year
+            return datetime(year, month, day).date()
+        except:
+            pass
+            
+    return None
+
+def sort_courses_by_date(courses):
+    today = datetime.now().date()
+    
+    def sort_key(course):
+        c_date = parse_course_date(course.get('date', ''))
+        if c_date:
+            if c_date >= today:
+                # Upcoming date (closest first): Priority 0, then by date ascending
+                return (0, c_date)
+            else:
+                # Past date (placed after upcoming): Priority 1, then by date ascending
+                return (1, c_date)
+        else:
+            # Unparseable date: Priority 2
+            return (2, datetime.max.date())
+            
+    return sorted(courses, key=sort_key)
+
 def get_active_courses():
     try:
         service, sheet_id = get_service()
@@ -63,7 +108,7 @@ def get_active_courses():
         if not values:
             return []
 
-        # Default Column Indices based on user specification:
+        # Locked Column Mapping based on Google Sheet '교육목록' specifications:
         # A(0): 교육명, B(1): 교육일정, C(2): 강사, D(3): 시간, E(4): 장소, F(5): 회원가, G(6): 비회원가, H(7): 상세URL, I(8): 상태
         idx_title = 0
         idx_date = 1
@@ -80,25 +125,6 @@ def get_active_courses():
             header_row = [str(cell).strip() for cell in values[0]]
             if any('교육' in cell or '제목' in cell or '강사' in cell or '회원' in cell for cell in header_row):
                 start_row = 1
-                for c_i, h_text in enumerate(header_row):
-                    if '교육명' in h_text or '제목' in h_text or '강좌명' in h_text:
-                        idx_title = c_i
-                    elif '일정' in h_text or '일시' in h_text:
-                        idx_date = c_i
-                    elif '강사' in h_text:
-                        idx_instructor = c_i
-                    elif '시간' in h_text:
-                        idx_time = c_i
-                    elif '장소' in h_text:
-                        idx_location = c_i
-                    elif '비회원' in h_text:
-                        idx_non_member_fee = c_i
-                    elif '회원가' in h_text or ('회원' in h_text and '비회원' not in h_text):
-                        idx_member_fee = c_i
-                    elif '상세' in h_text or 'URL' in h_text or '링크' in h_text:
-                        idx_link = c_i
-                    elif '상태' in h_text or '접수' in h_text:
-                        idx_status = c_i
 
         courses = []
         for i, row in enumerate(values[start_row:]):
@@ -145,7 +171,7 @@ def get_active_courses():
                     "link": link,
                     "detailUrl": link
                 })
-        return courses
+        return sort_courses_by_date(courses)
     except Exception as e:
         print(f"Error fetching active courses from sheet: {e}")
         return None

@@ -18,9 +18,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
         rel="stylesheet">
     <style>
+        * {
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f8fafc;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+
+        select {
+            max-width: 100%;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .table-row {
@@ -46,6 +60,22 @@
         .required::after {
             content: ' *';
             color: #ef4444;
+        }
+
+        @media (max-width: 640px) {
+            .table-row {
+                grid-template-columns: 1fr;
+            }
+
+            .table-label {
+                padding: 8px 12px;
+                font-size: 0.875rem;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .table-content {
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
@@ -156,6 +186,7 @@
         const [agreed, setAgreed] = useState(false);
         const [businessNoError, setBusinessNoError] = useState('');
         const [businessNoSuccess, setBusinessNoSuccess] = useState('');
+        const [showRefundModal, setShowRefundModal] = useState(false);
 
         useEffect(() => {
             fetch('/api/courses')
@@ -350,32 +381,32 @@
         };
 
         return (
-            <div className="max-w-4xl mx-auto py-8 px-4">
+            <div className="max-w-4xl mx-auto py-4 sm:py-8 px-2 sm:px-4">
                 <div className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
                     {/* Header */}
-                    <div className="bg-slate-800 text-white p-6 md:p-8">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="bg-slate-800 text-white p-5 sm:p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-4">
                             <div>
                                 <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded">인천상공회의소</span>
-                                <h1 className="text-2xl md:text-3xl font-bold mt-2">교육 참가 신청서</h1>
+                                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mt-2">교육 참가 신청서</h1>
                             </div>
-                            <div className="text-right text-xs md:text-sm text-slate-300">
+                            <div className="text-left md:text-right text-xs md:text-sm text-slate-300 space-y-0.5">
                                 <div>📍 장소: 인천상공회의소 교육장</div>
                                 <div>📞 문의: 032-810-2851</div>
                             </div>
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-6 space-y-8">
+                    <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6 sm:space-y-8">
                         {/* Course Selection & Detail Info Card */}
                         <section>
-                            <h2 className="text-lg font-bold border-l-4 border-blue-600 pl-3 mb-4 flex items-center">
+                            <h2 className="text-base sm:text-lg font-bold border-l-4 border-blue-600 pl-3 mb-3 sm:mb-4 flex items-center">
                                 <span className="mr-2 text-blue-600">00</span> 교육 과정 선택 및 상세 정보
                             </h2>
-                            <div className="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-6">
-                                <label className="block text-sm font-bold text-gray-700 mb-2">상공회의소 교육 일정을 확인하여 신청할 과정을 선택해 주세요.</label>
+                            <div className="bg-blue-50 p-4 sm:p-6 rounded-lg border border-blue-100 mb-6">
+                                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">상공회의소 교육 일정을 확인하여 신청할 과정을 선택해 주세요.</label>
                                 <select
-                                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-800"
+                                    className="w-full max-w-full truncate border border-gray-300 rounded-md px-3 sm:px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold text-gray-800 text-sm sm:text-base"
                                     value={selectedCourseId}
                                     onChange={(e) => setSelectedCourseId(Number(e.target.value))}
                                 >
@@ -407,13 +438,13 @@
 
                                 {/* Selected Course Detailed Info Card */}
                                 {selectedCourse && (
-                                    <div className="mt-5 bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
+                                    <div className="mt-4 sm:mt-5 bg-white rounded-lg p-4 sm:p-5 border border-slate-200 shadow-sm">
                                         <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
-                                            <h3 className="text-base font-bold text-slate-800 flex items-center">
+                                            <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center">
                                                 {selectedCourse.title || selectedCourse.name}
                                             </h3>
                                             {selectedCourse.status === '마감' && (
-                                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                                                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
                                                     ● 접수마감
                                                 </span>
                                             )}
@@ -421,7 +452,7 @@
 
                                         {/* Status Warning Banner if closed */}
                                         {selectedCourse.status === '마감' && (
-                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm font-bold flex items-center gap-2">
+                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs sm:text-sm font-bold flex items-center gap-2">
                                                 <svg className="w-5 h-5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                 </svg>
@@ -429,24 +460,24 @@
                                             </div>
                                         )}
 
-                                        <div className="space-y-3 mt-4 text-sm text-gray-700">
-                                            <div className="flex items-start gap-2">
+                                        <div className="space-y-3 mt-4 text-xs sm:text-sm text-gray-700">
+                                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                                                 <span className="font-bold text-gray-800 min-w-[80px]">📍 일시/장소:</span>
                                                 <span>
                                                     {selectedCourse.date ? `${selectedCourse.date} | 인천상공회의소` : '인천상공회의소'}
                                                 </span>
                                             </div>
-                                            <div className="flex items-start gap-2">
+                                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                                                 <span className="font-bold text-gray-800 min-w-[80px]">👨‍🏫 강사명:</span>
                                                 <span>{selectedCourse.instructor || '담당 강사'}</span>
                                             </div>
-                                            <div className="flex items-start gap-2">
+                                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                                                 <span className="font-bold text-gray-800 min-w-[80px]">💰 수강료:</span>
-                                                <div className="flex flex-wrap items-center gap-2 font-semibold">
-                                                    <span className="text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
+                                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 font-semibold">
+                                                    <span className="text-blue-700 bg-blue-50 px-2 sm:px-2.5 py-0.5 rounded border border-blue-200 text-xs sm:text-sm">
                                                         회원사 {typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee}
                                                     </span>
-                                                    <span className="text-gray-700 bg-gray-50 px-2.5 py-0.5 rounded border border-gray-200">
+                                                    <span className="text-gray-700 bg-gray-50 px-2 sm:px-2.5 py-0.5 rounded border border-gray-200 text-xs sm:text-sm">
                                                         비회원사 {typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee}
                                                     </span>
                                                     <span className="text-xs text-gray-500 font-normal">(신청 시 자동 판별)</span>
@@ -454,8 +485,8 @@
                                             </div>
                                         </div>
 
-                                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                                            <span className="font-bold text-gray-800 text-sm">🔗 상세 내용:</span>
+                                        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                            <span className="font-bold text-gray-800 text-xs sm:text-sm">🔗 상세 내용:</span>
                                             <a
                                                 href="https://incheon.korcham.net/front/event/eventList.do?menuId=10149"
                                                 target="_blank"
@@ -471,25 +502,25 @@
                         </section>
 
                         {/* Membership & Pricing Preview */}
-                        <section className="bg-blue-50 border border-blue-100 rounded-lg p-5 flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div>
-                                <h3 className="text-blue-900 font-bold mb-2">회원사 여부 선택</h3>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center cursor-pointer">
+                        <section className="bg-blue-50 border border-blue-100 rounded-lg p-4 sm:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="w-full md:w-auto">
+                                <h3 className="text-blue-900 font-bold mb-2 text-sm sm:text-base">회원사 여부 선택</h3>
+                                <div className="flex flex-wrap gap-3 sm:gap-4">
+                                    <label className="flex items-center cursor-pointer text-xs sm:text-sm md:text-base">
                                         <input type="radio" name="membership" checked={companyInfo.isMember}
-                                            onChange={() => handleCompanyChange('isMember', true)} className="mr-2 w-4 h-4" />
-                                        <span className="text-slate-700">회원사 ({typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee})</span>
+                                            onChange={() => handleCompanyChange('isMember', true)} className="mr-2 w-4 h-4 flex-shrink-0" />
+                                        <span className="text-slate-700 font-medium">회원사 ({typeof selectedCourse.memberFee === 'number' ? selectedCourse.memberFee.toLocaleString() + '원' : selectedCourse.memberFee})</span>
                                     </label>
-                                    <label className="flex items-center cursor-pointer">
+                                    <label className="flex items-center cursor-pointer text-xs sm:text-sm md:text-base">
                                         <input type="radio" name="membership" checked={!companyInfo.isMember}
-                                            onChange={() => handleCompanyChange('isMember', false)} className="mr-2 w-4 h-4" />
-                                        <span className="text-slate-700">비회원사 ({typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee})</span>
+                                            onChange={() => handleCompanyChange('isMember', false)} className="mr-2 w-4 h-4 flex-shrink-0" />
+                                        <span className="text-slate-700 font-medium">비회원사 ({typeof selectedCourse.nonMemberFee === 'number' ? selectedCourse.nonMemberFee.toLocaleString() + '원' : selectedCourse.nonMemberFee})</span>
                                     </label>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-slate-600 text-sm">총 교육 인원: {participants.length}명</p>
-                                <p className="text-blue-700 text-2xl font-black">총 {typeof totalPrice === 'number' ? totalPrice.toLocaleString() + '원' : totalPrice}</p>
+                            <div className="text-left md:text-right w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-blue-200">
+                                <p className="text-slate-600 text-xs sm:text-sm">총 교육 인원: {participants.length}명</p>
+                                <p className="text-blue-700 text-xl sm:text-2xl font-black">총 {typeof totalPrice === 'number' ? totalPrice.toLocaleString() + '원' : totalPrice}</p>
                             </div>
                         </section>
 
@@ -648,11 +679,80 @@
                         </div>
                     </form>
 
-                    {/* Footer Info */}
-                    <div className="bg-gray-50 p-6 border-t border-gray-200 text-xs text-gray-500">
-                        <p className="font-bold mb-1">인천상공회의소 (Education Service Center)</p>
-                        <p>인천광역시 남동구 은봉로 60번길 46 | Tel: 032-810-2800 | Fax: 032-810-2806</p>
-                    </div>
+                    {/* Toss Payments PG Approval Footer */}
+                    <footer className="bg-slate-800 text-slate-300 py-8 px-6 text-xs mt-12 rounded-b-lg border-t border-slate-700">
+                        <div className="max-w-4xl mx-auto space-y-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700 pb-4 gap-3">
+                                <div>
+                                    <h4 className="text-sm font-bold text-white mb-1">인천상공회의소 (Incheon Chamber of Commerce & Industry)</h4>
+                                    <p className="text-slate-400">토스페이먼츠 PG 가맹점 대표 사업자 정보</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRefundModal(true)}
+                                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-amber-300 border border-slate-600 rounded transition font-medium text-xs flex items-center gap-1.5"
+                                >
+                                    <span>📜</span> 취소 및 환불규정 보기
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-400 leading-relaxed">
+                                <div className="space-y-1">
+                                    <p><strong className="text-slate-200">상호명:</strong> 인천상공회의소 &nbsp;|&nbsp; <strong className="text-slate-200">대표자:</strong> 박주봉</p>
+                                    <p><strong className="text-slate-200">사업자등록번호:</strong> 139-82-00696</p>
+                                    <p><strong className="text-slate-200">사업장 주소:</strong> 인천광역시 남동구 은봉로60번길 46 (논현동, 인천상공회의소)</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p><strong className="text-slate-200">교육 및 결제 문의:</strong> 032-810-2851 (경제진흥실)</p>
+                                    <p><strong className="text-slate-200">팩스:</strong> 032-810-2807</p>
+                                    <p className="text-slate-500 pt-1">Copyright © Incheon Chamber of Commerce & Industry. All rights reserved.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+
+                    {/* Refund Policy Modal */}
+                    {showRefundModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-slate-800 border border-slate-100">
+                                <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <span className="text-blue-600">📜</span> 취소 및 환불 규정
+                                    </h3>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowRefundModal(false)}
+                                        className="text-gray-400 hover:text-gray-600 font-bold text-xl leading-none px-2 py-1"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <div className="space-y-3.5 text-sm text-slate-700 mb-6 leading-relaxed">
+                                    <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-lg flex items-start gap-2.5">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
+                                        <span>교육 시작 1일 전까지 취소 시 <strong className="text-blue-700">100% 전액 환불</strong> 가능합니다.</span>
+                                    </div>
+                                    <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-lg flex items-start gap-2.5">
+                                        <span className="bg-amber-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
+                                        <span>교육 당일 취소 및 불참 시 교재 및 좌석 배정 비용으로 인해 <strong className="text-amber-800">환불이 불가</strong>할 수 있습니다.</span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-2.5">
+                                        <span className="bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+                                        <span>환불 신청은 <strong className="text-slate-900">유선(032-810-2851)</strong>으로 접수해 주시기 바랍니다.</span>
+                                    </div>
+                                </div>
+                                <div className="text-right border-t border-slate-100 pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRefundModal(false)}
+                                        className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium text-sm transition shadow-sm"
+                                    >
+                                        확인 및 닫기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         );
