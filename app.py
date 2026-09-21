@@ -109,14 +109,14 @@ def get_active_courses():
             return []
 
         # Locked Column Mapping based on Google Sheet '교육목록' specifications:
-        # A(0): 교육명, B(1): 교육일정, C(2): 강사, D(3): 시간, E(4): 장소, F(5): 회원가, G(6): 비회원가, H(7): 상세URL, I(8): 상태
+        # A(0): 교육명, B(1): 교육일정, C(2): 강사, D(3): 시간, E(4): 회원가, F(5): 비회원가, G(6): 장소, H(7): 상세URL, I(8): 상태
         idx_title = 0
         idx_date = 1
         idx_instructor = 2
         idx_time = 3
-        idx_location = 4
-        idx_member_fee = 5
-        idx_non_member_fee = 6
+        idx_member_fee = 4     # E열 (index 4)
+        idx_non_member_fee = 5 # F열 (index 5)
+        idx_location = 6
         idx_link = 7
         idx_status = 8
 
