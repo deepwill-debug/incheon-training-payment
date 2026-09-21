@@ -13,7 +13,7 @@ load_dotenv()
 def parse_fee(fee_val, default_val=0):
     if fee_val is None:
         return default_val
-    s = str(fee_val).replace(',', '').strip()
+    s = str(fee_val).replace(',', '').replace('원', '').strip()
     digits = re.sub(r'[^\d]', '', s)
     if digits:
         return int(digits)
